@@ -23,7 +23,7 @@ const Videogrid = () => {
   useEffect(() => {
     const fetchvideo = async () => {
       try {
-        // ✅ Backend connection fixed here
+        // ✅ Backend se saari videos fetch karo
         const res = await axiosInstance.get("/video/getall");
         const videosData = Array.isArray(res.data) ? res.data : [res.data];
         setvideo(videosData);
@@ -37,6 +37,7 @@ const Videogrid = () => {
     fetchvideo();
   }, []);
 
+  // ✅ Category filter logic
   const filteredVideos =
     activeCategory === "All"
       ? videos
@@ -44,7 +45,7 @@ const Videogrid = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 sticky top-0 bg-white z-10">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 sticky top-0 bg-white z-10 pt-2 px-2">
         {categories.map((category) => (
           <button
             key={category.id}
@@ -60,7 +61,7 @@ const Videogrid = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-2">
         {loading ? (
           <div className="col-span-full text-center py-10 text-gray-500">Loading videos...</div>
         ) : filteredVideos.length === 0 ? (
