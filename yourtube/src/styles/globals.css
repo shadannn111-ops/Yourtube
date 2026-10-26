@@ -1,0 +1,41 @@
+﻿@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f0f0f;
+  --card: #ffffff;
+  --card-foreground: #0f0f0f;
+  --primary: #ff0000;
+  --secondary: #f2f2f2;
+  --muted: #f2f2f2;
+  --border: #e5e5e5;
+}
+
+body {
+  background-color: #ffffff !important;
+  color: #0f0f0f !important;
+  overflow: hidden;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+/* ✅ Force White everywhere */
+.bg-\[\#0f0f0f\], .bg-\[\#212121\], .bg-\[\#1a1a1a\], .bg-\[\#181818\], .bg-black {
+  background-color: #ffffff !important;
+}
+
+.text-white, .text-gray-300, .text-gray-400, .text-gray-500, .text-gray-600 {
+  color: #0f0f0f !important;
+}
+
+.text-gray-900, .text-gray-800, .text-gray-700 {
+  color: #0f0f0f !important;
+}
+
+.border-gray-800, .border-gray-700, .border-gray-200, .border-gray-300 {
+  border-color: #e5e5e5 !important;
+}

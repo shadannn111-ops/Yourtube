@@ -1,0 +1,8 @@
+﻿node_modules/
+.next/
+out/
+build/
+server/uploads/
+.env
+.env.local
+*.log
