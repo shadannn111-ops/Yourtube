@@ -23,7 +23,7 @@ const Videogrid = () => {
   useEffect(() => {
     const fetchvideo = async () => {
       try {
-        // ✅ AxiosInstance use ho raha hai (jo Render se connect hai)
+        // ✅ Backend connection fixed here
         const res = await axiosInstance.get("/video/getall");
         const videosData = Array.isArray(res.data) ? res.data : [res.data];
         setvideo(videosData);
