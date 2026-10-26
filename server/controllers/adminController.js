@@ -49,7 +49,7 @@ export const getAllSubscriptions = async (req, res) => {
   } catch (error) { return res.status(500).json({ message: "Something went wrong" }); }
 };
 
-// ✅ UPDATED: Cloudinary URL save hoga
+// ✅ SABSE BADI FIX: Video ab save hogi
 export const adminUploadVideo = async (req, res) => {
   if (!req.file) return res.status(404).json({ message: "Please upload a video file" });
   try {
@@ -58,10 +58,13 @@ export const adminUploadVideo = async (req, res) => {
       adminUser = await users.create({ email: "admin@yourtube.com", name: "YourTube Official", channelname: "YourTube Official", description: "Official YourTube channel", subscriptionPlan: "gold" });
     }
     
+    // ✅ Cloudinary URL yahan se aayega
+    const fileUrl = req.file.path || req.file.secure_url;
+    
     const file = new video({
       videotitle: req.body.videotitle,
       filename: req.file.originalname,
-      filepath: req.file.path, // ✅ Cloudinary URL
+      filepath: fileUrl, // ✅ Cloudinary URL save hoga
       filetype: req.file.mimetype,
       filesize: req.file.size,
       videochanel: req.body.videochanel || "YourTube Official",
@@ -69,9 +72,9 @@ export const adminUploadVideo = async (req, res) => {
       thumbnail: req.body.thumbnail || "",
       category: req.body.category || "All",
     });
-    await file.save();
+    await file.save(); // ✅ Yahan save ho raha hai
     return res.status(201).json("Video uploaded successfully");
-  } catch (error) { console.error(error); return res.status(500).json({ message: "Something went wrong" }); }
+  } catch (error) { console.error("UPLOAD ERROR:", error); return res.status(500).json({ message: "Something went wrong" }); }
 };
 
 export const updateVideoDetails = async (req, res) => {
