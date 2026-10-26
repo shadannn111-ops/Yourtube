@@ -2,20 +2,18 @@
 import axios from "axios";
 
 const UserContext = createContext();
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+const API_URL = "https://yourtube-backend-4g40.onrender.com"; // ✅ Direct URL
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [otpRequired, setOtpRequired] = useState(false);
   const [pendingUser, setPendingUser] = useState(null);
+  const [loading, setLoading] = useState(true); // ✅ Loading state
 
   const login = (userdata) => {
     setUser(userdata);
     localStorage.setItem("user", JSON.stringify(userdata));
-    // ✅ Default theme light kardo
-    const currentTheme = userdata.theme || "light";
-    localStorage.setItem("theme", currentTheme);
-    document.documentElement.setAttribute("data-theme", currentTheme);
+    document.documentElement.setAttribute("data-theme", "light");
   };
 
   const logout = () => {
@@ -55,24 +53,26 @@ export const UserProvider = ({ children }) => {
         await axios.put(`${API_URL}/user/update-theme`, { userId: user._id, theme });
         setUser({ ...user, theme });
         localStorage.setItem("theme", theme);
-        document.documentElement.setAttribute("data-theme", theme);
       }
     } catch (error) { console.error(error); }
   };
 
+  // ✅ SAFE USER LOAD
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) setUser(JSON.parse(savedUser));
-    
-    // ✅ Check karo theme saved hai ya nahi, nahi toh Light set karo
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-      document.documentElement.setAttribute("data-theme", savedTheme);
-    } else {
-      document.documentElement.setAttribute("data-theme", "light");
-      localStorage.setItem("theme", "light");
+    try {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser && savedUser !== "undefined") {
+        setUser(JSON.parse(savedUser));
+      }
+    } catch (error) {
+      console.error("Failed to load user from storage:", error);
+      localStorage.removeItem("user");
+    } finally {
+      setLoading(false);
     }
   }, []);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   return (
     <UserContext.Provider value={{ user, login, logout, verifyOTP, resendOTP, updateTheme, otpRequired, pendingUser }}>

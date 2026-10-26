@@ -23,7 +23,7 @@ const Videogrid = () => {
   useEffect(() => {
     const fetchvideo = async () => {
       try {
-        // ✅ Backend se saari videos fetch karo
+        // ✅ AxiosInstance use ho raha hai
         const res = await axiosInstance.get("/video/getall");
         const videosData = Array.isArray(res.data) ? res.data : [res.data];
         setvideo(videosData);
@@ -37,7 +37,6 @@ const Videogrid = () => {
     fetchvideo();
   }, []);
 
-  // ✅ Category filter logic
   const filteredVideos =
     activeCategory === "All"
       ? videos
