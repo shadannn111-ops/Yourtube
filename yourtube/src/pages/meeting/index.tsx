@@ -55,10 +55,10 @@ export default function MeetingHome() {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
         <div className="text-center">
-          <Video className="w-20 h-20 mx-auto text-gray-400 mb-4" />
+          <Video className="w-20 h-20 mx-auto text-red-600 mb-4" />
           <h2 className="text-3xl font-bold mb-2 text-gray-900">Video Meetings</h2>
           <p className="text-gray-500 mb-8">Sign in to create or join video meetings</p>
-          <Button onClick={() => router.push("/login")} className="bg-red-600 hover:bg-red-700 px-8 py-6 text-lg">Sign In</Button>
+          <Button onClick={() => router.push("/login")} className="bg-red-600 hover:bg-red-700 px-8 py-6 text-lg text-white">Sign In</Button>
         </div>
       </div>
     );
@@ -68,11 +68,11 @@ export default function MeetingHome() {
     <div className="min-h-screen bg-gray-50 text-gray-900 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-2xl flex items-center justify-center">
+          <div className="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-2xl flex items-center justify-center shadow-md">
             <Video className="w-6 h-6 md:w-8 md:h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-4xl font-bold">Video Meetings</h1>
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900">Video Meetings</h1>
             <p className="text-gray-500 text-sm md:text-base">Connect with anyone, anywhere, anytime</p>
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function MeetingHome() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center"><Plus className="w-6 h-6 text-white" /></div>
+              <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-sm"><Plus className="w-6 h-6 text-white" /></div>
               <h2 className="text-2xl font-semibold text-gray-900">Create Meeting</h2>
             </div>
             <div className="space-y-4">
@@ -98,7 +98,7 @@ export default function MeetingHome() {
                   <Input type="number" min={5} max={480} value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} className="bg-white border-gray-300 text-gray-900" />
                 </div>
               </div>
-              <Button onClick={handleCreateMeeting} disabled={loading} className="w-full bg-red-600 hover:bg-red-700 py-6 text-lg font-semibold">
+              <Button onClick={handleCreateMeeting} disabled={loading} className="w-full bg-red-600 hover:bg-red-700 py-6 text-lg font-semibold text-white">
                 {loading ? "Creating..." : "Create New Meeting"}
               </Button>
             </div>
@@ -106,7 +106,7 @@ export default function MeetingHome() {
 
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center"><LogIn className="w-6 h-6 text-white" /></div>
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-sm"><LogIn className="w-6 h-6 text-white" /></div>
               <h2 className="text-2xl font-semibold text-gray-900">Join Meeting</h2>
             </div>
             <div className="space-y-4">
@@ -114,7 +114,7 @@ export default function MeetingHome() {
                 <label className="text-sm font-medium text-gray-700 mb-1 block">Room ID</label>
                 <Input placeholder="Enter Room ID" value={roomId} onChange={(e) => setRoomId(e.target.value.toUpperCase())} className="bg-white border-gray-300 text-gray-900 font-mono text-lg" />
               </div>
-              <Button onClick={handleJoinMeeting} className="w-full bg-blue-600 hover:bg-blue-700 py-6 text-lg font-semibold">Join Meeting</Button>
+              <Button onClick={handleJoinMeeting} className="w-full bg-blue-600 hover:bg-blue-700 py-6 text-lg font-semibold text-white">Join Meeting</Button>
               <p className="text-xs text-gray-500 text-center">Ask the host for the Room ID to join</p>
             </div>
           </div>
