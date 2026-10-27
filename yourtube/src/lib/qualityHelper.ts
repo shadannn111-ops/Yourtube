@@ -1,12 +1,10 @@
-// 📊 Subscription plan → max allowed quality
-export const PLAN_QUALITY_LIMITS: Record<string, number> = {
+﻿export const PLAN_QUALITY_LIMITS: Record<string, number> = {
   free: 480,
   bronze: 720,
   silver: 1080,
-  gold: 2160, // 4K
+  gold: 2160,
 };
 
-// 📊 All available quality options
 export const QUALITY_OPTIONS = [
   { value: "2160p", label: "2160p (4K)", height: 2160 },
   { value: "1440p", label: "1440p (2K)", height: 1440 },
@@ -18,30 +16,18 @@ export const QUALITY_OPTIONS = [
   { value: "144p", label: "144p", height: 144 },
 ];
 
-// 📊 Playback speed options
 export const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
-// 🎯 Get max allowed quality for user's plan
 export const getMaxQualityForPlan = (plan?: string): number => {
   if (!plan) return PLAN_QUALITY_LIMITS.free;
   return PLAN_QUALITY_LIMITS[plan.toLowerCase()] || PLAN_QUALITY_LIMITS.free;
 };
 
-// 🎯 Check if a quality is allowed for the plan
-export const isQualityAllowed = (
-  qualityHeight: number,
-  plan?: string
-): boolean => {
-  return qualityHeight <= getMaxQualityForPlan(plan);
-};
-
-// 🎯 Get plan display name
 export const getPlanDisplayName = (plan?: string): string => {
   if (!plan) return "Free";
   return plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
 };
 
-// 🎯 Get upgrade message for locked quality
 export const getUpgradeMessage = (qualityHeight: number): string => {
   if (qualityHeight <= 480) return "";
   if (qualityHeight <= 720) return "Upgrade to Bronze or higher for 720p";
