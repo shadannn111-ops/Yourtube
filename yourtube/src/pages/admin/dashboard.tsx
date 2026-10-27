@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axiosinstance"; // ✅ AxiosInstance import kiya
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,7 @@ function SmartThumbnail({ video }: { video: any }) {
   const [thumb, setThumb] = useState<string>(video.thumbnail || "");
 
   const cleanPath = video?.filepath?.replace(/\\/g, "/");
-  const videoUrl = cleanPath?.startsWith("http") ? cleanPath : `http://localhost:5000/${cleanPath}`;
+  const videoUrl = cleanPath?.startsWith("http") ? cleanPath : `https://yourtube-backend-4g40.onrender.com/${cleanPath}`;
 
   const generateThumb = () => {
     const v = videoRef.current; const c = canvasRef.current;
@@ -70,11 +70,12 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
+      // ✅ Ab axiosInstance use ho raha hai
       const [usersRes, historyRes, subsRes, videosRes] = await Promise.all([
-        axios.get("http://localhost:5000/admin/users"),
-        axios.get("http://localhost:5000/admin/login-history"),
-        axios.get("http://localhost:5000/admin/subscriptions"),
-        axios.get("http://localhost:5000/video/getall")
+        axiosInstance.get("/admin/users"),
+        axiosInstance.get("/admin/login-history"),
+        axiosInstance.get("/admin/subscriptions"),
+        axiosInstance.get("/video/getall")
       ]);
       setUsers(usersRes.data); setLoginHistory(historyRes.data); setSubscriptions(subsRes.data); setVideos(videosRes.data);
     } catch (error) { console.log(error); } finally { setLoading(false); }
@@ -85,7 +86,7 @@ const AdminDashboard = () => {
     if (!videoToDelete) return;
     setIsDeleting(true);
     try {
-      await axios.delete(`http://localhost:5000/video/delete/${videoToDelete._id}`);
+      await axiosInstance.delete(`/video/delete/${videoToDelete._id}`);
       toast.success("Video deleted successfully"); fetchData(); setDeleteModalOpen(false);
     } catch (error) { toast.error("Failed to delete video"); } finally { setIsDeleting(false); setVideoToDelete(null); }
   };
@@ -98,7 +99,7 @@ const AdminDashboard = () => {
     if (!editTitle) { toast.error("Title cannot be empty"); return; }
     setIsUpdating(true);
     try {
-      await axios.put(`http://localhost:5000/admin/update-video/${videoToEdit._id}`, { videotitle: editTitle, category: editCategory });
+      await axiosInstance.put(`/admin/update-video/${videoToEdit._id}`, { videotitle: editTitle, category: editCategory });
       toast.success("Video updated successfully"); fetchData(); setEditModalOpen(false);
     } catch (error) { toast.error("Failed to update video"); } finally { setIsUpdating(false); }
   };
@@ -120,7 +121,8 @@ const AdminDashboard = () => {
 
   const sendUploadRequest = async (formData: FormData) => {
     try {
-      const res = await axios.post("http://localhost:5000/admin/upload-video", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      // ✅ AxiosInstance use ho raha hai
+      const res = await axiosInstance.post("/admin/upload-video", formData, { headers: { "Content-Type": "multipart/form-data" } });
       if (res.data) { toast.success("Video uploaded successfully!"); setVideoTitle(""); setVideoFile(null); setThumbnailFile(null); setVideoCategory("Music"); fetchData(); }
     } catch (error) { toast.error("Failed to upload video"); } finally { setUploading(false); }
   };
