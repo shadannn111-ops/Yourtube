@@ -103,27 +103,30 @@ const SubscriptionPage = () => {
     } catch (error) { toast.error("Payment failed. Please try again."); setShowProcessing(false); }
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-50 p-6 flex justify-center items-center"><Loader2 className="w-8 h-8 animate-spin text-red-600" /></div>;
+  if (loading) return <div className="min-h-screen bg-gray-50 p-6 flex justify-center items-center"><Loader2 className="w-10 h-10 animate-spin text-red-600" /></div>;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2 text-gray-900">Subscription Plans</h1>
-        <p className="text-gray-500 mb-8">Choose the plan that fits you best</p>
+        <h1 className="text-4xl font-extrabold mb-2 text-gray-900 tracking-tight">Subscription Plans</h1>
+        <p className="text-gray-500 mb-8 text-lg">Choose the plan that fits you best</p>
 
         {currentSubscription && currentSubscription.plan && currentSubscription.plan !== "free" && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8">
-            <p className="font-semibold text-green-800">Current Plan: {currentSubscription.plan.toUpperCase()}</p>
-            {currentSubscription.expiryDate && <p className="text-sm text-green-600 mt-1">Expires: {new Date(currentSubscription.expiryDate).toLocaleDateString()}</p>}
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 mb-8 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="font-bold text-xl text-green-800">Current Plan: {currentSubscription.plan.toUpperCase()}</p>
+              {currentSubscription.expiryDate && <p className="text-sm text-green-600 font-medium mt-1">Expires: {new Date(currentSubscription.expiryDate).toLocaleDateString()}</p>}
+            </div>
+            <CheckCircle2 className="w-10 h-10 text-green-500" />
           </div>
         )}
 
         {paymentSettings?.isFakePayment && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 mb-8 flex items-start gap-4 shadow-sm">
+            <AlertTriangle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-yellow-800">Demo Mode Active</p>
-              <p className="text-sm text-yellow-600 mt-1">{paymentSettings.warningMessage}</p>
+              <p className="font-bold text-yellow-800 text-lg">Demo Mode Active</p>
+              <p className="text-sm text-yellow-700 mt-1">{paymentSettings.warningMessage}</p>
             </div>
           </div>
         )}
@@ -132,15 +135,15 @@ const SubscriptionPage = () => {
           {plans.map((plan: any) => {
             const isCurrent = currentSubscription && currentSubscription.plan === plan.name.toLowerCase();
             return (
-              <div key={plan.name} className={`bg-white border rounded-2xl p-6 flex flex-col shadow-sm ${isCurrent ? "border-green-500 ring-2 ring-green-500/20" : "border-gray-200"}`}>
-                <h2 className="text-xl font-bold mb-2 text-gray-900">{plan.name}</h2>
-                <p className="text-3xl font-bold mb-6 text-gray-900">₹{plan.price}<span className="text-sm font-normal text-gray-500">/{plan.duration}</span></p>
-                <ul className="space-y-3 mb-8 flex-1">
+              <div key={plan.name} className={`bg-white border rounded-3xl p-6 flex flex-col shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 ${isCurrent ? "border-green-500 ring-4 ring-green-500/10" : "border-gray-200"}`}>
+                <h2 className="text-2xl font-bold mb-2 text-gray-900">{plan.name}</h2>
+                <p className="text-4xl font-extrabold mb-6 text-gray-900">₹{plan.price}<span className="text-sm font-medium text-gray-500">/{plan.duration}</span></p>
+                <ul className="space-y-4 mb-8 flex-1">
                   {plan.features.map((feature: string, index: number) => (
-                    <li key={index} className="flex items-center gap-2 text-sm text-gray-600"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /><span>{feature}</span></li>
+                    <li key={index} className="flex items-center gap-3 text-sm text-gray-600 font-medium"><Check className="w-5 h-5 text-green-500 flex-shrink-0" /><span>{feature}</span></li>
                   ))}
                 </ul>
-                <Button onClick={() => handleSubscribeClick(plan)} disabled={isCurrent} className={`mt-auto w-full ${isCurrent ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}>
+                <Button onClick={() => handleSubscribeClick(plan)} disabled={isCurrent} className={`mt-auto w-full h-12 rounded-xl font-bold text-base shadow-md transition-all ${isCurrent ? "bg-green-100 hover:bg-green-100 text-green-700" : "bg-red-600 hover:bg-red-700 text-white"}`}>
                   {isCurrent ? "✓ Current Plan" : plan.price === 0 ? "Get Started" : `Subscribe ₹${plan.price}`}
                 </Button>
               </div>
@@ -149,56 +152,63 @@ const SubscriptionPage = () => {
         </div>
       </div>
 
-      {/* UPI Payment Modal */}
+      {/* ✅ Premium Payment Modal */}
       {showUpiModal && selectedPlan && paymentSettings && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <div className="flex items-center gap-2"><Smartphone className="w-5 h-5 text-red-600" /><h2 className="text-lg font-bold text-gray-900">Payment</h2></div>
-              <button onClick={() => { setShowUpiModal(false); setSelectedPlan(null); }} className="hover:bg-gray-100 rounded-full p-1"><X className="w-5 h-5 text-gray-500" /></button>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transform animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-50 p-2.5 rounded-xl"><Smartphone className="w-6 h-6 text-red-600" /></div>
+                <h2 className="text-2xl font-bold text-gray-900">Payment</h2>
+              </div>
+              <button onClick={() => { setShowUpiModal(false); setSelectedPlan(null); }} className="hover:bg-gray-100 rounded-full p-2 transition-colors"><X className="w-6 h-6 text-gray-500" /></button>
             </div>
+            
             {paymentSettings.isFakePayment && (
-              <div className="bg-red-50 border-b border-red-200 p-4 flex items-start gap-3">
+              <div className="bg-red-50 border-b border-red-100 p-5 flex items-start gap-3">
                 <ShieldAlert className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
-                <div><p className="font-bold text-red-700">⚠️ FAKE PAYMENT DEMO</p><p className="text-xs text-red-600 mt-1">No actual money will be transferred. Subscription will activate for demo.</p></div>
+                <div><p className="font-bold text-red-700">⚠️ FAKE PAYMENT DEMO</p><p className="text-sm text-red-600 mt-1">No actual money will be transferred. Subscription will activate for demo.</p></div>
               </div>
             )}
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-200">
-                <div><p className="text-sm text-gray-500">Plan</p><p className="text-lg font-bold text-gray-900">{selectedPlan.name}</p></div>
-                <div className="text-right"><p className="text-sm text-gray-500">Amount</p><p className="text-2xl font-bold text-red-600">₹{selectedPlan.price}</p></div>
+
+            <div className="p-6 space-y-5">
+              <div className="flex justify-between items-center bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                <div><p className="text-sm font-medium text-gray-500 mb-1">Plan</p><p className="text-xl font-bold text-gray-900">{selectedPlan.name}</p></div>
+                <div className="text-right"><p className="text-sm font-medium text-gray-500 mb-1">Amount</p><p className="text-3xl font-extrabold text-red-600">₹{selectedPlan.price}</p></div>
               </div>
-              <div className="flex justify-between items-center bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div><p className="text-xs text-gray-500">UPI ID</p><p className="font-mono font-medium text-gray-900">{paymentSettings.upiId}</p></div>
-                <Button size="sm" variant="ghost" onClick={() => copyToClipboard(paymentSettings.upiId, "UPI ID")}><Copy className="w-4 h-4" /></Button>
+              
+              <div className="flex justify-between items-center bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div><p className="text-xs font-medium text-gray-500 mb-1">UPI ID</p><p className="font-mono text-base font-semibold text-gray-900">{paymentSettings.upiId}</p></div>
+                <Button size="sm" variant="ghost" onClick={() => copyToClipboard(paymentSettings.upiId, "UPI ID")} className="hover:bg-gray-200 rounded-lg"><Copy className="w-5 h-5 text-gray-600" /></Button>
               </div>
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <button onClick={handleUpiAppClick} className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-medium"><Smartphone className="w-4 h-4" />Pay via UPI App</button>
-                <button onClick={handleBankClick} className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium"><CreditCard className="w-4 h-4" />Pay via Bank</button>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <button onClick={handleUpiAppClick} className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-600/20 transition-all transform hover:-translate-y-1"><Smartphone className="w-5 h-5" />Pay via UPI</button>
+                <button onClick={handleBankClick} className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-600/20 transition-all transform hover:-translate-y-1"><CreditCard className="w-5 h-5" />Pay via Bank</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Provider Selection Modal */}
+      {/* ✅ Provider Selection Modal */}
       {showMethodModal && methodType && selectedPlan && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900">{methodType === "upi" ? "Select UPI App" : "Select Bank"}</h2>
-              <button onClick={() => { setShowMethodModal(false); setMethodType(null); }} className="hover:bg-gray-100 rounded-full p-1"><X className="w-5 h-5 text-gray-500" /></button>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto transform animate-in slide-in-from-bottom-10 duration-300">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">{methodType === "upi" ? "Select UPI App" : "Select Bank"}</h2>
+              <button onClick={() => { setShowMethodModal(false); setMethodType(null); }} className="hover:bg-gray-100 rounded-full p-2"><X className="w-6 h-6 text-gray-500" /></button>
             </div>
             <div className="p-4 space-y-2">
               {methodType === "upi" ? UPI_APPS.map((app) => (
-                <button key={app.id} onClick={() => handleProviderSelect(app)} className="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-left">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: app.color }}>{app.name[0]}</div>
-                  <span className="font-medium text-gray-900">{app.name}</span>
+                <button key={app.id} onClick={() => handleProviderSelect(app)} className="w-full flex items-center gap-4 p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all text-left group">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:scale-110 transition-transform" style={{ backgroundColor: app.color }}>{app.name[0]}</div>
+                  <span className="font-semibold text-lg text-gray-800">{app.name}</span>
                 </button>
               )) : INDIAN_BANKS.map((bank) => (
-                <button key={bank.id} onClick={() => handleProviderSelect(bank)} className="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-left">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: bank.color }}><Building2 className="w-5 h-5" /></div>
-                  <span className="font-medium text-gray-900">{bank.name}</span>
+                <button key={bank.id} onClick={() => handleProviderSelect(bank)} className="w-full flex items-center gap-4 p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all text-left group">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform" style={{ backgroundColor: bank.color }}><Building2 className="w-6 h-6" /></div>
+                  <span className="font-semibold text-lg text-gray-800">{bank.name}</span>
                 </button>
               ))}
             </div>
@@ -206,30 +216,32 @@ const SubscriptionPage = () => {
         </div>
       )}
 
-      {/* Processing/Success Modal */}
+      {/* ✅ Processing/Success Modal */}
       {showProcessing && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center transform animate-in zoom-in-95 duration-300">
             {!paymentSuccess ? (
               <>
-                <Loader2 className="w-16 h-16 text-red-600 mx-auto animate-spin mb-6" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Processing Payment</h2>
-                <p className="text-gray-500 mb-6">{selectedProvider?.name || "Processing..."}</p>
-                <div className="space-y-3 text-left">
+                <Loader2 className="w-20 h-20 text-red-600 mx-auto animate-spin mb-6" />
+                <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Processing Payment</h2>
+                <p className="text-gray-500 font-medium mb-8">{selectedProvider?.name || "Processing..."}</p>
+                <div className="space-y-4 text-left bg-gray-50 p-6 rounded-2xl border border-gray-100">
                   {["Connecting to provider", "Verifying payment details", `Processing ₹${selectedPlan?.price}`, "Confirming transaction", "Activating subscription"].map((step, idx) => (
                     <div key={idx} className="flex items-center gap-3">
-                      {processingStep > idx ? <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" /> : processingStep === idx ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin flex-shrink-0" /> : <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />}
-                      <span className={processingStep >= idx ? "text-sm text-gray-900" : "text-sm text-gray-400"}>{step}</span>
+                      {processingStep > idx ? <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" /> : processingStep === idx ? <Loader2 className="w-6 h-6 text-blue-500 animate-spin flex-shrink-0" /> : <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0" />}
+                      <span className={processingStep >= idx ? "text-base font-semibold text-gray-900" : "text-base font-medium text-gray-400"}>{step}</span>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
-                <h2 className="text-2xl font-bold text-green-600 mb-2">Payment Successful!</h2>
-                <p className="text-gray-600 mb-2">Your {selectedPlan?.name} plan is now active</p>
-                {currentSubscription?.expiryDate && <p className="text-sm text-gray-500">Expires: {new Date(currentSubscription.expiryDate).toLocaleDateString()}</p>}
+                <div className="bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle2 className="w-14 h-14 text-green-600" />
+                </div>
+                <h2 className="text-3xl font-extrabold text-green-600 mb-2">Payment Successful!</h2>
+                <p className="text-lg text-gray-700 font-medium mb-4">Your {selectedPlan?.name} plan is now active</p>
+                {currentSubscription?.expiryDate && <p className="text-sm text-gray-500 bg-gray-100 inline-block px-4 py-2 rounded-lg">Expires: {new Date(currentSubscription.expiryDate).toLocaleDateString()}</p>}
               </>
             )}
           </div>
