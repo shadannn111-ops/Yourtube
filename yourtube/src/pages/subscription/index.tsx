@@ -30,7 +30,7 @@ const UPI_APPS = [
 ];
 
 const SubscriptionPage = () => {
-  const { user, login } = useUser();
+  const { user, login, updateUserPlan } = useUser(); // ✅ updateUserPlan import kiya
   const [plans, setPlans] = useState([]);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +97,14 @@ const SubscriptionPage = () => {
       if (res.data.success) {
         setCurrentSubscription(res.data.subscription);
         setPaymentSuccess(true);
-        if (user && login) login({ ...user, subscriptionPlan: selectedPlan.name.toLowerCase() });
+        
+        // ✅ SABSE ZAROORI: User plan instant update karo
+        if (user && login) {
+          const newPlan = selectedPlan.name.toLowerCase();
+          login({ ...user, subscriptionPlan: newPlan });
+          if (updateUserPlan) updateUserPlan(newPlan);
+        }
+        
         setTimeout(() => { setShowProcessing(false); setPaymentSuccess(false); setSelectedPlan(null); setSelectedProvider(null); }, 2000);
       }
     } catch (error) { toast.error("Payment failed. Please try again."); setShowProcessing(false); }

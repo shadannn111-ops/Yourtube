@@ -2,13 +2,13 @@
 import axios from "axios";
 
 const UserContext = createContext();
-const API_URL = "https://yourtube-backend-4g40.onrender.com"; // ✅ Direct URL
+const API_URL = "https://yourtube-backend-4g40.onrender.com";
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [otpRequired, setOtpRequired] = useState(false);
   const [pendingUser, setPendingUser] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ Loading state
+  const [loading, setLoading] = useState(true);
 
   const login = (userdata) => {
     setUser(userdata);
@@ -20,6 +20,15 @@ export const UserProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("theme");
+  };
+
+  // ✅ Naya function: Plan update karne ke liye (bina logout kiye)
+  const updateUserPlan = (newPlan) => {
+    if (user) {
+      const updatedUser = { ...user, subscriptionPlan: newPlan };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
   };
 
   const verifyOTP = async (otp) => {
@@ -57,7 +66,6 @@ export const UserProvider = ({ children }) => {
     } catch (error) { console.error(error); }
   };
 
-  // ✅ SAFE USER LOAD
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem("user");
@@ -75,7 +83,7 @@ export const UserProvider = ({ children }) => {
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   return (
-    <UserContext.Provider value={{ user, login, logout, verifyOTP, resendOTP, updateTheme, otpRequired, pendingUser }}>
+    <UserContext.Provider value={{ user, login, logout, verifyOTP, resendOTP, updateTheme, otpRequired, pendingUser, updateUserPlan }}>
       {children}
     </UserContext.Provider>
   );
