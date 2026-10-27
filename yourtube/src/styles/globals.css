@@ -4,38 +4,16 @@
 :root {
   --background: #ffffff;
   --foreground: #0f0f0f;
-  --card: #ffffff;
-  --card-foreground: #0f0f0f;
   --primary: #ff0000;
   --primary-foreground: #ffffff;
   --secondary: #f2f2f2;
-  --secondary-foreground: #0f0f0f;
   --muted: #f2f2f2;
-  --muted-foreground: #606060;
   --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #ff0000;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
 }
 
 body {
-  background-color: #ffffff !important;
-  color: #0f0f0f !important;
+  background-color: #ffffff;
+  color: #0f0f0f;
   overflow: hidden;
 }
 
@@ -44,41 +22,13 @@ html, body {
   margin: 0;
 }
 
-/* ✅ Force all text and backgrounds to white theme */
-.bg-\[\#0f0f0f\], .bg-\[\#212121\], .bg-\[\#1a1a1a\], .bg-\[\#181818\], .bg-black {
-  background-color: #ffffff !important;
-}
-
-.text-white, .text-gray-300, .text-gray-400, .text-gray-500, .text-gray-600 {
-  color: #606060 !important;
-}
-
-.text-gray-900, .text-gray-800, .text-gray-700 {
-  color: #0f0f0f !important;
-}
-
-.border-gray-800, .border-gray-700, .border-gray-200, .border-gray-300 {
-  border-color: #e5e5e5 !important;
-}
-
-/* Fix placeholder visibility */
-input::placeholder, textarea::placeholder {
-  color: #888888 !important;
-}
-
-/* ✅ Custom Animations for Login Page */
+/* ✅ Animations */
 @keyframes blob {
   0% { transform: translate(0px, 0px) scale(1); }
   33% { transform: translate(30px, -50px) scale(1.1); }
   66% { transform: translate(-20px, 20px) scale(0.9); }
   100% { transform: translate(0px, 0px) scale(1); }
 }
-.animate-blob {
-  animation: blob 7s infinite;
-}
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
+.animate-blob { animation: blob 7s infinite; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
