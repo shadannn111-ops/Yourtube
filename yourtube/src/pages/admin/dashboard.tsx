@@ -10,31 +10,55 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 const CATEGORIES = ["Music", "Gaming", "Movies", "News", "Sports", "Technology", "Comedy", "Education", "Science", "Travel", "Food", "Fashion", "Nature"];
 
+// ✅ UPDATED SMART THUMBNAIL (Force HTTPS & Fix Black Box)
 function SmartThumbnail({ video }: { video: any }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [thumb, setThumb] = useState<string>(video.thumbnail || "");
 
-  // ✅ HTTPS FORCE FIX
+  // Force HTTPS fix
   let videoUrl = video?.filepath || "";
   if (videoUrl.startsWith("http://")) {
     videoUrl = videoUrl.replace("http://", "https://");
   }
 
   const generateThumb = () => {
-    const v = videoRef.current; const c = canvasRef.current;
+    const v = videoRef.current; 
+    const c = canvasRef.current;
     if (!v || !c) return;
     try {
-      c.width = v.videoWidth; c.height = v.videoHeight;
+      c.width = v.videoWidth; 
+      c.height = v.videoHeight;
       const ctx = c.getContext("2d");
-      if (ctx) { ctx.drawImage(v, 0, 0, c.width, c.height); setThumb(c.toDataURL("image/jpeg", 0.7)); }
-    } catch (e) { console.log("Thumb error", e); }
+      if (ctx) { 
+        ctx.drawImage(v, 0, 0, c.width, c.height); 
+        setThumb(c.toDataURL("image/jpeg", 0.7)); 
+      }
+    } catch (e) { 
+      console.log("Thumb generation error:", e); 
+    }
   };
 
   return (
     <div className="relative w-28 sm:w-32 aspect-video bg-gray-100 rounded-md overflow-hidden flex-shrink-0 shadow-sm border border-gray-200">
-      {thumb ? <img src={thumb} alt="thumb" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center w-full h-full text-gray-400"><PlaySquare className="w-6 h-6 animate-pulse" /></div>}
-      <video ref={videoRef} src={videoUrl} className="hidden" muted preload="metadata" crossOrigin="anonymous" onLoadedData={() => { if (videoRef.current) videoRef.current.currentTime = 1; }} onSeeked={generateThumb} />
+      {thumb ? (
+        <img src={thumb} alt="thumb" className="w-full h-full object-cover" />
+      ) : (
+        <div className="flex items-center justify-center w-full h-full text-gray-400">
+          <PlaySquare className="w-6 h-6 animate-pulse" />
+        </div>
+      )}
+      {/* ✅ Hidden video to extract frame */}
+      <video 
+        ref={videoRef} 
+        src={videoUrl} 
+        className="hidden" 
+        muted 
+        preload="metadata" 
+        crossOrigin="anonymous" 
+        onLoadedData={() => { if (videoRef.current) videoRef.current.currentTime = 1; }} 
+        onSeeked={generateThumb} 
+      />
       <canvas ref={canvasRef} className="hidden" />
     </div>
   );
