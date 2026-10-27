@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
-import axiosInstance from "@/lib/axiosinstance"; // ✅ AxiosInstance import kiya
+import axiosInstance from "@/lib/axiosinstance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,8 +15,11 @@ function SmartThumbnail({ video }: { video: any }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [thumb, setThumb] = useState<string>(video.thumbnail || "");
 
-  const cleanPath = video?.filepath?.replace(/\\/g, "/");
-  const videoUrl = cleanPath?.startsWith("http") ? cleanPath : `https://yourtube-backend-4g40.onrender.com/${cleanPath}`;
+  // ✅ HTTPS FORCE FIX
+  let videoUrl = video?.filepath || "";
+  if (videoUrl.startsWith("http://")) {
+    videoUrl = videoUrl.replace("http://", "https://");
+  }
 
   const generateThumb = () => {
     const v = videoRef.current; const c = canvasRef.current;
@@ -70,7 +73,6 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // ✅ Ab axiosInstance use ho raha hai
       const [usersRes, historyRes, subsRes, videosRes] = await Promise.all([
         axiosInstance.get("/admin/users"),
         axiosInstance.get("/admin/login-history"),
@@ -121,7 +123,6 @@ const AdminDashboard = () => {
 
   const sendUploadRequest = async (formData: FormData) => {
     try {
-      // ✅ AxiosInstance use ho raha hai
       const res = await axiosInstance.post("/admin/upload-video", formData, { headers: { "Content-Type": "multipart/form-data" } });
       if (res.data) { toast.success("Video uploaded successfully!"); setVideoTitle(""); setVideoFile(null); setThumbnailFile(null); setVideoCategory("Music"); fetchData(); }
     } catch (error) { toast.error("Failed to upload video"); } finally { setUploading(false); }
