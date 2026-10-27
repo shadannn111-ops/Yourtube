@@ -17,7 +17,9 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   const handleKeypress = (e: React.KeyboardEvent) => { if (e.key === "Enter") handleSearch(e as any); };
@@ -37,11 +39,21 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
       </div>
 
       <form onSubmit={handleSearch} className="hidden sm:flex items-center gap-2 flex-1 max-w-2xl mx-4">
-        <div className="flex flex-1">
-          <Input type="search" placeholder="Search" value={searchQuery} onKeyPress={handleKeypress} onChange={(e) => setSearchQuery(e.target.value)} className="rounded-l-full border-r-0 focus-visible:ring-0 bg-white text-gray-900 border-gray-300" />
-          <Button type="submit" className="rounded-r-full px-6 bg-gray-100 hover:bg-gray-200 text-gray-600 border border-l-0 border-gray-300"><Search className="w-5 h-5" /></Button>
+        <div className="flex flex-1 group">
+          <Input 
+            type="search" 
+            placeholder="Search" 
+            value={searchQuery} 
+            onKeyPress={handleKeypress} 
+            onChange={(e) => setSearchQuery(e.target.value)} 
+            // ✅ Hover aur Focus effect add kiya
+            className="rounded-l-full border-r-0 focus-visible:ring-0 bg-white text-gray-900 border-gray-300 group-hover:border-blue-500 focus:border-blue-600 transition-colors h-10" 
+          />
+          <Button type="submit" className="rounded-r-full px-6 bg-gray-100 hover:bg-gray-200 text-gray-600 border border-l-0 border-gray-300 group-hover:border-blue-500 transition-colors h-10">
+            <Search className="w-5 h-5" />
+          </Button>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full text-gray-900 hover:bg-gray-100"><Mic className="w-5 h-5" /></Button>
+        <Button variant="ghost" size="icon" className="rounded-full text-gray-900 hover:bg-gray-100 h-10 w-10"><Mic className="w-5 h-5" /></Button>
       </form>
 
       <Button variant="ghost" size="icon" className="sm:hidden text-gray-900"><Search className="w-5 h-5" /></Button>
