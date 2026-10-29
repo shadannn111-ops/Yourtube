@@ -12,21 +12,22 @@ import commentroutes from "./routes/comment.js";
 import subscriptionroutes from "./routes/subscription.js";
 import downloadroutes from "./routes/download.js";
 import adminroutes from "./routes/admin.js";
-import meetingroutes from "./routes/meeting.js";
 import subscriberoutes from "./routes/subscribe.js";
+import meetingroutes from "./routes/meeting.js"; // ✅ Meeting Route
 
 dotenv.config();
 const app = express();
+import path from "path";
 
-// ✅ CORS Fix: Sabhi origins allow kar diye
 app.use(cors({
-  origin: "*", 
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 }));
 
 app.use(express.json({ limit: "50mb", extended: true }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use("/uploads", express.static(path.join("uploads")));
 
 app.get("/", (req, res) => {
   res.send("You tube backend is working");
@@ -42,19 +43,21 @@ app.use("/comment", commentroutes);
 app.use("/subscription", subscriptionroutes);
 app.use("/download", downloadroutes);
 app.use("/admin", adminroutes);
-app.use("/meeting", meetingroutes);
 app.use("/subscribe", subscriberoutes);
+app.use("/meeting", meetingroutes); // ✅ Meeting Route Register
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`server running on port ${PORT}`);
 });
 
 const DBURL = process.env.DB_URL;
-mongoose.connect(DBURL).then(() => {
-  console.log("Mongodb connected");
-}).catch((error) => {
-  console.log(error);
-});
-
-
+mongoose
+  .connect(DBURL)
+  .then(() => {
+    console.log("Mongodb connected");
+  })
+  .catch((error) => {
+    console.log(error);
+  });
