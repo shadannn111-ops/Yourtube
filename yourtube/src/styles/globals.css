@@ -20,6 +20,18 @@ body {
 html, body {
   height: 100%;
   margin: 0;
+  /* ✅ Default: Poore app me text select nahi hoga */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ✅ Sirf Comments aur Input fields me text select ho sake */
+.selectable-text, 
+textarea, 
+input,
+p.comment-text {
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 
 /* ✅ Animations */

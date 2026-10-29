@@ -391,7 +391,7 @@ const Comments = ({ videoId }: any) => {
                   ) : (
                     <>
                       {/* 🌐 Translated text or original */}
-                      <p className="text-sm">
+                      <p className="text-sm selectable-text">
                         {translation ? translation.text : comment.commentbody}
                       </p>
 
@@ -590,7 +590,7 @@ const Comments = ({ videoId }: any) => {
                                 ago
                               </span>
                             </div>
-                            <p className="text-sm">{reply.commentbody}</p>
+                            <p className="text-sm selectable-text">{reply.commentbody}</p>
                           </div>
                         </div>
                       ))}
