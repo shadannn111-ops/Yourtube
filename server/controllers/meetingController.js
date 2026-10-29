@@ -1,15 +1,18 @@
 ﻿import Meeting from "../Modals/Meeting.js";
 import crypto from "crypto";
 
-// ✅ Create Meeting
+// ✅ Create Meeting with Password
 export const createMeeting = async (req, res) => {
-  const { userId, title, maxParticipants, duration } = req.body;
+  const { userId, title, password, maxParticipants, duration } = req.body;
   try {
-    const roomId = crypto.randomBytes(4).toString("hex").toUpperCase(); // Random 8-char ID
+    if (!password) return res.status(400).json({ message: "Password required" });
+
+    const roomId = crypto.randomBytes(4).toString("hex").toUpperCase(); // 8 char ID
     
     const meeting = await Meeting.create({
       title: title || "Video Call",
       roomId,
+      password,
       host: userId,
       maxParticipants: maxParticipants || 10,
       duration: duration || 60,
@@ -17,41 +20,36 @@ export const createMeeting = async (req, res) => {
 
     return res.status(200).json({ success: true, meeting });
   } catch (error) {
-    console.error("Create Meeting Error:", error);
     return res.status(500).json({ message: "Failed to create meeting" });
   }
 };
 
-// ✅ Get User's Meetings
+// ✅ Join Meeting (Password Verify)
+export const joinMeeting = async (req, res) => {
+  const { roomId, password } = req.body;
+  try {
+    const meeting = await Meeting.findOne({ roomId, status: "active" });
+    if (!meeting) return res.status(404).json({ message: "Meeting not found" });
+    if (meeting.password !== password) return res.status(401).json({ message: "Invalid password" });
+
+    return res.status(200).json({ success: true, meeting });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to join meeting" });
+  }
+};
+
 export const getUserMeetings = async (req, res) => {
   const { userId } = req.params;
   try {
     const meetings = await Meeting.find({ host: userId }).sort({ createdAt: -1 }).populate("host", "name email");
     return res.status(200).json(meetings);
-  } catch (error) {
-    return res.status(500).json({ message: "Failed to fetch meetings" });
-  }
+  } catch (error) { return res.status(500).json({ message: "Failed" }); }
 };
 
-// ✅ Get Single Meeting
-export const getMeeting = async (req, res) => {
-  const { roomId } = req.params;
-  try {
-    const meeting = await Meeting.findOne({ roomId }).populate("host", "name email");
-    if (!meeting) return res.status(404).json({ message: "Meeting not found" });
-    return res.status(200).json(meeting);
-  } catch (error) {
-    return res.status(500).json({ message: "Failed to fetch meeting" });
-  }
-};
-
-// ✅ End Meeting
 export const endMeeting = async (req, res) => {
   const { roomId } = req.params;
   try {
-    const meeting = await Meeting.findOneAndUpdate({ roomId }, { status: "ended" }, { new: true });
-    return res.status(200).json({ success: true, meeting });
-  } catch (error) {
-    return res.status(500).json({ message: "Failed to end meeting" });
-  }
+    await Meeting.findOneAndUpdate({ roomId }, { status: "ended" });
+    return res.status(200).json({ success: true });
+  } catch (error) { return res.status(500).json({ message: "Failed" }); }
 };
