@@ -30,7 +30,26 @@ export default function App({ Component, pageProps }: AppProps) {
       <div className="h-screen flex flex-col bg-white text-gray-900 overflow-hidden">
         <title>Your-Tube Clone</title>
         <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-        <Toaster theme="light" />
+        
+        {/* ✅ Premium Toast Notification */}
+        <Toaster 
+          position="bottom-right" 
+          theme="dark" 
+          toastOptions={{
+            className: "font-sans",
+            style: {
+              background: "#1f2937", // Dark gray
+              color: "#ffffff",
+              border: "1px solid #374151",
+              borderRadius: "12px",
+              padding: "12px 16px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+              fontSize: "14px",
+              fontWeight: "500",
+            },
+          }}
+        />
+
         <OTPModal />
         
         <div className="flex flex-1 overflow-hidden relative">
@@ -47,7 +66,6 @@ export default function App({ Component, pageProps }: AppProps) {
           )}
 
           <main className="flex-1 overflow-y-auto overflow-x-hidden relative pb-16 md:pb-0 bg-gray-50">
-            {/* ✅ page-transition class lagayi hai key ke saath taaki har route change pe animate ho */}
             <div key={router.pathname} className="page-transition h-full">
               <Component {...pageProps} />
             </div>
