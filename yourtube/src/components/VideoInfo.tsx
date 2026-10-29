@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
-import { Clock, Download, MoreHorizontal, Share, ThumbsDown, ThumbsUp, Flag, Bookmark, Ban } from "lucide-react";
+import { Clock, Download, MoreHorizontal, Share, ThumbsDown, ThumbsUp, Flag, Bookmark } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
@@ -110,14 +110,17 @@ const VideoInfo = ({ video }: any) => {
     } catch (error: any) { toast.error("Failed to subscribe"); }
   };
 
+  // ✅ Common Button Class for Instant Feel
+  const actionBtnClass = "flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-sm px-4 py-2 rounded-full transition-all duration-150 active:scale-95 select-none cursor-pointer";
+
   return (
     <div className="space-y-4 text-gray-900 mt-2">
-      <h1 className="text-xl md:text-2xl font-bold leading-tight">{video?.videotitle}</h1>
+      <h1 className="text-xl md:text-2xl font-bold leading-tight select-none">{video?.videotitle}</h1>
 
-      {/* ✅ REAL YOUTUBE LAYOUT (Channel info & Buttons same line on desktop) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ✅ Perfect Layout: Channel, Subscribe & Actions (Responsive) */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 justify-between">
         
-        {/* Left: Channel + Subscribe */}
+        {/* Left: Channel Info + Subscribe */}
         <div className="flex items-center gap-3">
           <Avatar className="w-10 h-10 md:w-12 md:h-12 border border-gray-200 shadow-sm">
             <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-bold">{video?.videochanel?.[0]}</AvatarFallback>
@@ -129,60 +132,58 @@ const VideoInfo = ({ video }: any) => {
           
           <Button 
             onClick={handleSubscribe} 
-            className={`rounded-full px-5 font-bold shadow-sm transition-all ${
+            className={`rounded-full px-6 font-bold shadow-sm transition-all duration-150 active:scale-95 ${
               isSubscribed 
-                ? "bg-gray-100 text-gray-700 hover:bg-gray-200" 
-                : "bg-black hover:bg-gray-800 text-white"
+                ? "bg-gray-200 text-gray-800 hover:bg-gray-300" 
+                : "bg-red-600 hover:bg-red-700 text-white"
             }`}
           >
             {isSubscribed ? "Subscribed" : "Subscribe"}
           </Button>
         </div>
 
-        {/* Right: Action Buttons (All in one line) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-          {/* Like / Dislike */}
+        {/* Right: Action Buttons (No scroll, wrap on small screens) */}
+        <div className="flex flex-wrap items-center gap-2">
+          
+          {/* Like / Dislike Group */}
           <div className="flex items-center bg-gray-100 rounded-full">
-            <Button variant="ghost" size="sm" className="rounded-l-full hover:bg-gray-200 font-medium pr-3 pl-4" onClick={handleLike}>
-              <ThumbsUp className={`w-4 h-4 mr-2 ${isLiked ? "fill-black text-black" : ""}`} />{likes?.toLocaleString()}
-            </Button>
-            <div className="w-px h-5 bg-gray-300" />
-            <Button variant="ghost" size="sm" className="rounded-r-full hover:bg-gray-200 font-medium pr-4 pl-3" onClick={handleDislike}>
-              <ThumbsDown className={`w-4 h-4 ${isDisliked ? "fill-black text-black" : ""}`} />
-            </Button>
+            <button onClick={handleLike} className="flex items-center gap-2 hover:bg-gray-200 px-4 py-2 rounded-l-full transition-all duration-150 active:scale-95 select-none cursor-pointer border-r border-gray-300">
+              <ThumbsUp className={`w-5 h-5 ${isLiked ? "fill-black" : ""}`} />
+              <span className="font-bold text-sm">{likes?.toLocaleString()}</span>
+            </button>
+            <button onClick={handleDislike} className="flex items-center hover:bg-gray-200 px-4 py-2 rounded-r-full transition-all duration-150 active:scale-95 select-none cursor-pointer">
+              <ThumbsDown className={`w-5 h-5 ${isDisliked ? "fill-black" : ""}`} />
+            </button>
           </div>
 
-          {/* Watch Later */}
-          <Button variant="ghost" size="sm" className={`bg-gray-100 rounded-full hover:bg-gray-200 font-medium px-4 ${isWatchLater ? "text-red-600" : ""}`} onClick={handleWatchLater}>
-            <Clock className="w-4 h-4 mr-2" />{isWatchLater ? "Saved" : "Watch Later"}
-          </Button>
+          <button onClick={handleWatchLater} className={`${actionBtnClass} ${isWatchLater ? "text-red-600 bg-red-50 hover:bg-red-100" : ""}`}>
+            <Clock className="w-5 h-5" /> {isWatchLater ? "Saved" : "Watch Later"}
+          </button>
 
-          {/* Share */}
-          <Button variant="ghost" size="sm" className="bg-gray-100 rounded-full hover:bg-gray-200 font-medium px-4" onClick={handleShare}>
-            <Share className="w-4 h-4 mr-2" />Share
-          </Button>
+          <button onClick={handleShare} className={actionBtnClass}>
+            <Share className="w-5 h-5" /> Share
+          </button>
 
-          {/* Download */}
-          <Button variant="ghost" size="sm" className="bg-gray-100 rounded-full hover:bg-gray-200 font-medium px-4" onClick={handleDownload} disabled={downloadStatus === "Downloaded successfully!"}>
-            <Download className="w-4 h-4 mr-2" />{downloadStatus === "Downloaded successfully!" ? "Downloaded" : "Download"}
-          </Button>
+          <button onClick={handleDownload} disabled={downloadStatus === "Downloaded successfully!"} className={`${actionBtnClass} ${downloadStatus === "Downloaded successfully!" ? "opacity-50 cursor-not-allowed" : ""}`}>
+            <Download className="w-5 h-5" /> {downloadStatus === "Downloaded successfully!" ? "Downloaded" : "Download"}
+          </button>
 
-          {/* 3-Dot Menu (Working) */}
+          {/* 3-Dot Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="bg-gray-100 rounded-full hover:bg-gray-200 shrink-0">
-                <MoreHorizontal className="w-5 h-5" />
-              </Button>
+              <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all duration-150 active:scale-95 select-none cursor-pointer">
+                <MoreHorizontal className="w-6 h-6" />
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-white border-gray-200 shadow-xl rounded-xl">
-              <DropdownMenuItem onClick={handleShare} className="cursor-pointer font-medium hover:bg-gray-100">
+              <DropdownMenuItem onClick={handleShare} className="cursor-pointer font-medium hover:bg-gray-100 py-2.5">
                 <Share className="w-4 h-4 mr-2" /> Share
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleWatchLater} className="cursor-pointer font-medium hover:bg-gray-100">
+              <DropdownMenuItem onClick={handleWatchLater} className="cursor-pointer font-medium hover:bg-gray-100 py-2.5">
                 <Bookmark className="w-4 h-4 mr-2" /> {isWatchLater ? "Remove Watch Later" : "Save to Watch Later"}
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-gray-200" />
-              <DropdownMenuItem onClick={() => toast.info("Report submitted")} className="cursor-pointer font-medium hover:bg-gray-100 text-red-600">
+              <DropdownMenuItem onClick={() => toast.info("Report submitted")} className="cursor-pointer font-medium hover:bg-gray-100 text-red-600 py-2.5">
                 <Flag className="w-4 h-4 mr-2" /> Report
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -191,7 +192,7 @@ const VideoInfo = ({ video }: any) => {
       </div>
 
       {/* ✅ Description Box */}
-      <div className="bg-gray-100 hover:bg-gray-200 transition-colors rounded-xl p-3 md:p-4 cursor-pointer mt-4" onClick={() => setShowFullDescription(!showFullDescription)}>
+      <div className="bg-gray-100 hover:bg-gray-200 transition-colors duration-200 rounded-xl p-3 md:p-4 cursor-pointer mt-4 select-none" onClick={() => setShowFullDescription(!showFullDescription)}>
         <div className="flex gap-2 text-sm font-bold mb-1">
           <span>{video?.views?.toLocaleString()} views</span>
           <span>{formatDistanceToNow(new Date(video?.createdAt))} ago</span>
