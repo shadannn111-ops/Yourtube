@@ -11,6 +11,8 @@ export default function SubscriptionsPage() {
   const [channels, setChannels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getUserId = () => user?._id || user?.id || null;
+
   useEffect(() => {
     if (user) {
       fetchSubscribedChannels();
@@ -21,7 +23,10 @@ export default function SubscriptionsPage() {
 
   const fetchSubscribedChannels = async () => {
     try {
-      const userId = user._id || user.id;
+      const userId = getUserId();
+      if (!userId) return;
+      
+      // ✅ Backend se subscribed channels fetch karo
       const res = await axiosInstance.get(`/subscribe/channels/${userId}`);
       setChannels(res.data);
     } catch (error) {

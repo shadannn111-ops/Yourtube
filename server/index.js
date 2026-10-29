@@ -12,6 +12,7 @@ import commentroutes from "./routes/comment.js";
 import subscriptionroutes from "./routes/subscription.js";
 import downloadroutes from "./routes/download.js";
 import adminroutes from "./routes/admin.js";
+import meetingroutes from "./routes/meeting.js";
 import subscriberoutes from "./routes/subscribe.js";
 
 dotenv.config();
@@ -41,6 +42,7 @@ app.use("/comment", commentroutes);
 app.use("/subscription", subscriptionroutes);
 app.use("/download", downloadroutes);
 app.use("/admin", adminroutes);
+app.use("/meeting", meetingroutes);
 app.use("/subscribe", subscriberoutes);
 
 const PORT = process.env.PORT || 5000;
@@ -54,3 +56,4 @@ mongoose.connect(DBURL).then(() => {
 }).catch((error) => {
   console.log(error);
 });
+

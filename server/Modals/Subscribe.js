@@ -3,11 +3,11 @@
 const subscribeSchema = mongoose.Schema(
   {
     subscriber: {
-      type: String,   // ✅ ObjectId se String kar diya
+      type: String, // ✅ String kar diya
       required: true,
     },
     channel: {
-      type: String,   // ✅ ObjectId se String kar diya
+      type: String, // ✅ String kar diya
       required: true,
     },
     subscribedAt: { type: Date, default: Date.now },
