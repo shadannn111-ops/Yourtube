@@ -10,33 +10,30 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 const CATEGORIES = ["Music", "Gaming", "Movies", "News", "Sports", "Technology", "Comedy", "Education", "Science", "Travel", "Food", "Fashion", "Nature"];
 
-// ✅ VideoThumbnail with Fallback
-function VideoThumbnail({ video }: { video: any }) {
-  const [hasError, setHasError] = useState(false);
+// ✅ SMART THUMBNAIL COMPONENT (Auto generate if missing)
+function SmartThumbnail({ video }: { video: any }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [thumb, setThumb] = useState<string>(video.thumbnail || "");
+
   let videoUrl = video?.filepath || "";
   if (videoUrl.startsWith("http://")) videoUrl = videoUrl.replace("http://", "https://");
 
-  // Fallback image (YouTube style placeholder)
-  const fallbackImage = "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=300&q=80";
+  const generateThumb = () => {
+    const v = videoRef.current; const c = canvasRef.current;
+    if (!v || !c) return;
+    try {
+      c.width = v.videoWidth; c.height = v.videoHeight;
+      const ctx = c.getContext("2d");
+      if (ctx) { ctx.drawImage(v, 0, 0, c.width, c.height); setThumb(c.toDataURL("image/jpeg", 0.7)); }
+    } catch (e) { console.log(e); }
+  };
 
   return (
-    <div className="relative w-28 sm:w-32 aspect-video bg-gray-200 rounded-md overflow-hidden flex-shrink-0 shadow-sm border border-gray-300">
-      {hasError || !videoUrl ? (
-        <img src={fallbackImage} alt="video" className="w-full h-full object-cover" />
-      ) : (
-        <video
-          src={`${videoUrl}#t=1`}
-          className="object-cover w-full h-full pointer-events-none"
-          preload="metadata"
-          muted
-          playsInline
-          onError={() => setHasError(true)} // ✅ Error pe fallback lagao
-        />
-      )}
-      <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
-      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/30 transition-opacity">
-        <PlaySquare className="w-8 h-8 text-white" />
-      </div>
+    <div className="relative w-28 sm:w-32 aspect-video bg-gray-200 rounded-md overflow-hidden flex-shrink-0 border border-gray-300">
+      {thumb ? <img src={thumb} alt="thumb" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center w-full h-full text-gray-400"><PlaySquare className="w-6 h-6 animate-pulse" /></div>}
+      <video ref={videoRef} src={`${videoUrl}#t=1`} className="hidden" muted preload="metadata" crossOrigin="anonymous" onLoadedData={() => { if (videoRef.current) videoRef.current.currentTime = 1; }} onSeeked={generateThumb} />
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 }
@@ -173,7 +170,7 @@ const AdminDashboard = () => {
                 <tbody className="divide-y divide-gray-200">
                   {videos.map((video: any) => (
                     <tr key={video._id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 md:px-6 py-4"><VideoThumbnail video={video} /></td>
+                      <td className="px-4 md:px-6 py-4"><SmartThumbnail video={video} /></td>
                       <td className="px-4 md:px-6 py-4">
                         <p className="font-semibold text-gray-900 truncate max-w-[150px] md:max-w-[200px]" title={video.videotitle}>{video.videotitle}</p>
                         <span className="inline-block bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded mt-1 font-medium">{video.category || "Uncategorized"}</span>
