@@ -16,6 +16,9 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const router = useRouter();
 
+  // ✅ Fix: User ID nikalne ka safe tarika
+  const getUserId = () => user?._id || user?.id || "";
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -56,9 +59,6 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
           <div className="flex items-center gap-1 md:gap-2">
             {user ? (
               <>
-                {/* ❌ Video Icon Hata Diya */}
-                
-                {/* ✅ Silver Plan Tag (Professional Color) */}
                 {user?.subscriptionPlan && user.subscriptionPlan !== "free" && (
                   <Link href="/subscription">
                     <div className={`hidden sm:flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition hover:scale-105 shadow-sm ${
@@ -74,7 +74,6 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
                   </Link>
                 )}
 
-                {/* ✅ Bell Icon Working (Dropdown) */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="hidden sm:flex text-gray-900 hover:bg-gray-100 relative">
@@ -89,10 +88,6 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
                         <p className="text-sm text-gray-800 font-medium">Welcome to YourTube! 🎉</p>
                         <p className="text-xs text-gray-500 mt-1">Start uploading your videos now.</p>
                       </div>
-                      <div className="p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer">
-                        <p className="text-sm text-gray-800 font-medium">New subscription active</p>
-                        <p className="text-xs text-gray-500 mt-1">Your {user.subscriptionPlan} plan is now active.</p>
-                      </div>
                     </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -100,7 +95,16 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild><Button variant="ghost" className="relative h-8 w-8 rounded-full"><Avatar className="h-8 w-8"><AvatarImage src={user.image} /><AvatarFallback className="bg-gray-200 text-gray-800">{user.name?.[0] || "U"}</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 bg-white border-gray-200 text-gray-900" align="end" forceMount>
-                    {user?.channelname ? <DropdownMenuItem asChild><Link href={`/channel/${user?._id}`}>Your channel</Link></DropdownMenuItem> : <div className="px-2 py-1.5"><Button variant="secondary" size="sm" className="w-full" onClick={() => setisdialogeopen(true)}>Create Channel</Button></div>}
+                    {/* ✅ FIX: getUserId() use karo taaki undefined na ho */}
+                    {user?.channelname ? (
+                      <DropdownMenuItem asChild>
+                        <Link href={`/channel/${getUserId()}`}>Your channel</Link>
+                      </DropdownMenuItem>
+                    ) : (
+                      <div className="px-2 py-1.5">
+                        <Button variant="secondary" size="sm" className="w-full" onClick={() => setisdialogeopen(true)}>Create Channel</Button>
+                      </div>
+                    )}
                     <DropdownMenuItem asChild><Link href="/history">History</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/liked">Liked videos</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/watch-later">Watch later</Link></DropdownMenuItem>
