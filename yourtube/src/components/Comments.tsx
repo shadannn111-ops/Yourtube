@@ -6,26 +6,18 @@ import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
 import { toast } from "sonner";
-import { ThumbsUp, ThumbsDown, Reply, MoreHorizontal, Edit, Delete, Flag, Languages, Globe } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Reply, MoreHorizontal, Edit, Delete, Flag, Languages } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-
-const TARGET_LANGUAGES = [
-  { code: "en", label: "English" }, { code: "hi", label: "Hindi" }, { code: "ur", label: "Urdu" },
-  { code: "es", label: "Spanish" }, { code: "fr", label: "French" }, { code: "de", label: "German" },
-];
 
 const Comments = ({ videoId }: any) => {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
   const [sortBy, setSortBy] = useState("newest");
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState("");
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
 
+  // ✅ SAFE ID (Fallback to user.id if _id is missing)
   const getUserId = () => user?._id || user?.id || null;
 
   useEffect(() => { loadComments(); }, [videoId, sortBy]);
@@ -40,13 +32,24 @@ const Comments = ({ videoId }: any) => {
   const handleSubmitComment = async () => {
     if (!user) return toast.error("Please login first");
     if (!newComment.trim()) return;
+    
+    const userId = getUserId();
+    if (!userId) return toast.error("User ID not found. Please login again.");
+
     setIsSubmitting(true);
     try {
       const res = await axiosInstance.post("/comment/postcomment", {
-        videoid: videoId, userid: getUserId(), commentbody: newComment, usercommented: user.name || "Anonymous", userProfilePic: user.image || "",
+        videoid: videoId, 
+        userid: userId, 
+        commentbody: newComment, 
+        usercommented: user.name || user.email || "Anonymous", 
+        userProfilePic: user.image || "",
       });
       if (res.data.comment) { toast.success("Comment posted!"); setNewComment(""); loadComments(); }
-    } catch (error: any) { toast.error(error.response?.data?.message || "Error"); } 
+    } catch (error: any) { 
+      console.error("Comment Error:", error);
+      toast.error(error.response?.data?.message || "Error posting comment"); 
+    } 
     finally { setIsSubmitting(false); }
   };
 
@@ -55,6 +58,14 @@ const Comments = ({ videoId }: any) => {
     try {
       const res = await axiosInstance.post(`/comment/like/${commentId}`, { userId: getUserId() });
       if (res.data.likeCount !== undefined) { setComments((prev) => prev.map((c) => c._id === commentId ? { ...c, likeCount: res.data.likeCount } : c)); }
+    } catch (error) { console.log(error); }
+  };
+
+  const handleDislike = async (commentId: string) => {
+    if (!user) return toast.error("Please login first");
+    try {
+      const res = await axiosInstance.post(`/comment/dislike/${commentId}`, { userId: getUserId() });
+      if (res.data.dislikeCount !== undefined) { setComments((prev) => prev.map((c) => c._id === commentId ? { ...c, dislikeCount: res.data.dislikeCount } : c)); }
     } catch (error) { console.log(error); }
   };
 
@@ -71,7 +82,7 @@ const Comments = ({ videoId }: any) => {
         </select>
       </div>
 
-      {/* ✅ Premium Comment Input Box */}
+      {/* ✅ Premium Comment Input */}
       <div className="flex gap-4 items-start">
         <Avatar className="w-10 h-10 mt-1"><AvatarImage src={user?.image || ""} /><AvatarFallback className="bg-red-100 text-red-700 font-bold">{user?.name?.[0] || "U"}</AvatarFallback></Avatar>
         <div className="flex-1 space-y-2">
@@ -85,16 +96,16 @@ const Comments = ({ videoId }: any) => {
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" className="rounded-full font-medium" onClick={() => setNewComment("")} disabled={!newComment.trim()}>Cancel</Button>
             <Button onClick={handleSubmitComment} disabled={!newComment.trim() || isSubmitting || !user} className="rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 shadow-md">
-              Comment
+              {isSubmitting ? "Posting..." : "Comment"}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* ✅ Comments List with Hover Effects */}
+      {/* ✅ Comments List */}
       <div className="space-y-6 mt-6">
         {comments.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">No comments yet.</p>
+          <p className="text-sm text-gray-500 italic">No comments yet. Be the first to comment!</p>
         ) : (
           comments.map((comment) => (
             <div key={comment._id} className="flex gap-4 group">
@@ -107,7 +118,6 @@ const Comments = ({ videoId }: any) => {
                 
                 <p className="text-sm text-gray-800 leading-relaxed mb-2 selectable-text">{comment.commentbody}</p>
                 
-                {/* ✅ Comment Action Buttons */}
                 <div className="flex gap-4 mt-2 text-xs font-medium text-gray-500 items-center">
                   <button onClick={() => handleLike(comment._id)} className="flex items-center gap-1 hover:text-gray-900 hover:bg-gray-100 px-2 py-1 rounded-full transition-colors">
                     <ThumbsUp className="w-4 h-4" /> {comment.likeCount || 0}
@@ -115,7 +125,7 @@ const Comments = ({ videoId }: any) => {
                   <button onClick={() => handleDislike(comment._id)} className="flex items-center gap-1 hover:text-gray-900 hover:bg-gray-100 px-2 py-1 rounded-full transition-colors">
                     <ThumbsDown className="w-4 h-4" /> {comment.dislikeCount || 0}
                   </button>
-                  <button onClick={() => setReplyingTo(replyingTo === comment._id ? null : comment._id)} className="flex items-center gap-1 hover:text-gray-900 hover:bg-gray-100 px-2 py-1 rounded-full transition-colors font-bold">
+                  <button className="flex items-center gap-1 hover:text-gray-900 hover:bg-gray-100 px-2 py-1 rounded-full transition-colors font-bold">
                     Reply
                   </button>
                 </div>
