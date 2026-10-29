@@ -2,10 +2,9 @@
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings,
   PictureInPicture2, SkipBack, SkipForward, Subtitles, Theater,
-  Lock, Check, ChevronLeft, Crown, X,
+  Lock, Check, ChevronLeft, Crown,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import Link from "next/link";
 import {
   QUALITY_OPTIONS,
   SPEED_OPTIONS,
@@ -35,7 +34,8 @@ export default function CustomVideoPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
+  // ✅ Volume state 1 (Full) se start hoga
+  const [volume, setVolume] = useState(1); 
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
@@ -49,9 +49,17 @@ export default function CustomVideoPlayer({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentQuality, setCurrentQuality] = useState("Auto");
 
-  // ✅ Plan check function
   const maxQuality = getMaxQualityForPlan(userPlan);
   const isAllowed = (height: number) => height <= maxQuality;
+
+  // ✅ Video load hote hi Volume Set karo
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.volume = 1;
+      video.muted = false;
+    }
+  }, [videoUrl]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -75,8 +83,14 @@ export default function CustomVideoPlayer({
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (video.paused) { video.play().catch((e) => console.log(e)); setIsPlaying(true); } 
-    else { video.pause(); setIsPlaying(false); }
+    if (video.paused) { 
+      video.play().catch((e) => console.log(e)); 
+      setIsPlaying(true); 
+    } 
+    else { 
+      video.pause(); 
+      setIsPlaying(false); 
+    }
   }, []);
 
   const skip = (seconds: number) => {
@@ -85,11 +99,29 @@ export default function CustomVideoPlayer({
     video.currentTime = Math.max(0, Math.min(video.currentTime + seconds, video.duration));
   };
 
+  // ✅ Volume Change Handler
+  const handleVolumeChange = (newVolume: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    setVolume(newVolume);
+    video.volume = newVolume;
+    video.muted = newVolume === 0;
+    setIsMuted(newVolume === 0);
+  };
+
+  // ✅ Mute Toggle Handler
   const toggleMute = () => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !video.muted;
-    setIsMuted(video.muted);
+    const newMutedState = !video.muted;
+    video.muted = newMutedState;
+    setIsMuted(newMutedState);
+    
+    // Agar muted se unmute kar rahe hain, aur volume 0 hai, toh 1 kar do
+    if (!newMutedState && video.volume === 0) {
+      video.volume = 1;
+      setVolume(1);
+    }
   };
 
   const toggleFullscreen = () => {
@@ -118,17 +150,44 @@ export default function CustomVideoPlayer({
     if (!video) return;
     const onTimeUpdate = () => { if (isFinite(video.currentTime)) setCurrentTime(video.currentTime); };
     const onLoadedMetadata = () => { if (isFinite(video.duration)) setDuration(video.duration); };
+    
+    // ✅ Video events se sync karo
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onVolumeChange = () => {
+      setVolume(video.volume);
+      setIsMuted(video.muted);
+    };
+
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("loadedmetadata", onLoadedMetadata);
+    video.addEventListener("play", onPlay);
+    video.addEventListener("pause", onPause);
+    video.addEventListener("volumechange", onVolumeChange);
+    
     return () => {
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.removeEventListener("play", onPlay);
+      video.removeEventListener("pause", onPause);
+      video.removeEventListener("volumechange", onVolumeChange);
     };
   }, [videoUrl]);
 
   return (
     <div ref={containerRef} tabIndex={0} className="bg-black overflow-hidden group outline-none relative w-full rounded-lg" style={{ aspectRatio: "16/9", maxHeight: "70vh" }}>
-      <video ref={videoRef} src={videoUrl} poster={poster} className="w-full h-full object-contain" onClick={togglePlay} playsInline crossOrigin="anonymous">
+      <video 
+        ref={videoRef} 
+        src={videoUrl} 
+        poster={poster} 
+        className="w-full h-full object-contain" 
+        onClick={togglePlay} 
+        playsInline 
+        crossOrigin="anonymous"
+        // ✅ Preload aur volume defaults
+        preload="auto"
+        volume={1}
+      >
         {subtitlesUrl && <track kind="subtitles" src={subtitlesUrl} srcLang="en" label="English" default={false} />}
       </video>
 
@@ -155,7 +214,23 @@ export default function CustomVideoPlayer({
             <Button variant="ghost" size="icon" onClick={togglePlay} className="text-white hover:bg-white/20 h-9 w-9">{isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</Button>
             <Button variant="ghost" size="icon" onClick={() => skip(-10)} className="text-white hover:bg-white/20 h-9 w-9"><SkipBack className="w-5 h-5" /></Button>
             <Button variant="ghost" size="icon" onClick={() => skip(10)} className="text-white hover:bg-white/20 h-9 w-9"><SkipForward className="w-5 h-5" /></Button>
-            <Button variant="ghost" size="icon" onClick={toggleMute} className="text-white hover:bg-white/20 h-9 w-9">{isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}</Button>
+            
+            {/* ✅ Volume Control with Slider */}
+            <div className="flex items-center group/volume">
+              <Button variant="ghost" size="icon" onClick={toggleMute} className="text-white hover:bg-white/20 h-9 w-9">
+                {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </Button>
+              <input 
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.05" 
+                value={isMuted ? 0 : volume} 
+                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                className="w-0 group-hover/volume:w-20 h-1 accent-red-600 cursor-pointer transition-all duration-300"
+              />
+            </div>
+            
             <span className="text-white text-xs ml-2 tabular-nums">{formatTime(currentTime)} / {formatTime(duration)}</span>
           </div>
 
@@ -192,7 +267,7 @@ export default function CustomVideoPlayer({
                       <button onClick={() => { setCurrentQuality("Auto"); setSettingsView("main"); }} className="w-full flex justify-between px-4 py-2 hover:bg-white/10 text-sm"><span>Auto</span>{currentQuality === "Auto" && <Check className="w-4 h-4 text-blue-400" />}</button>
                       
                       {QUALITY_OPTIONS.map((q) => {
-                        const allowed = isAllowed(q.height); // ✅ Yahan check ho raha hai
+                        const allowed = isAllowed(q.height);
                         return (
                           <button key={q.value} onClick={() => changeQuality(q.value, q.height)} disabled={!allowed} className={`w-full flex justify-between px-4 py-2 text-sm ${allowed ? "hover:bg-white/10" : "text-gray-500 cursor-not-allowed"}`} title={!allowed ? getUpgradeMessage(q.height) : ""}>
                             <div className="flex items-center gap-2"><span>{q.label}</span>{!allowed && <Lock className="w-3 h-3 text-gray-500" />}</div>
