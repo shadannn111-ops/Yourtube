@@ -18,22 +18,44 @@ export default function MeetingHome() {
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  useEffect(() => { if (user) fetchMeetings(); }, [user]);
+  const getUserId = () => user?._id || user?.id || null;
+
+  useEffect(() => { 
+    if (user) fetchMeetings(); 
+  }, [user]);
 
   const fetchMeetings = async () => {
     try {
-      const res = await axiosInstance.get(`/meeting/user/${user._id}`);
+      const userId = getUserId();
+      if (!userId) return;
+      const res = await axiosInstance.get(`/meeting/user/${userId}`);
       setMeetings(res.data);
     } catch (error) { console.log(error); }
   };
 
   const handleCreateMeeting = async () => {
-    if (!user) { toast.error("Please login first"); return; }
+    const userId = getUserId();
+    if (!userId) { toast.error("Please login first"); return; }
+    
     setLoading(true);
     try {
-      const res = await axiosInstance.post("/meeting/create", { userId: user._id, title: title || "Video Call", maxParticipants, duration });
-      if (res.data.success) { toast.success("Meeting created!"); router.push("/meeting/" + res.data.meeting.roomId); }
-    } catch (error) { toast.error("Failed to create meeting"); } finally { setLoading(false); }
+      const res = await axiosInstance.post("/meeting/create", {
+        userId: userId, 
+        title: title || "Video Call", 
+        maxParticipants, 
+        duration,
+      });
+      
+      if (res.data.success) { 
+        toast.success("Meeting created!"); 
+        router.push("/meeting/" + res.data.meeting.roomId); 
+      }
+    } catch (error: any) { 
+      console.error("Meeting Error:", error);
+      toast.error(error.response?.data?.message || "Failed to create meeting"); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleJoinMeeting = () => {
@@ -45,6 +67,19 @@ export default function MeetingHome() {
     navigator.clipboard.writeText(id); setCopiedId(id); toast.success("Room ID copied!");
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Video className="w-20 h-20 mx-auto text-red-600 mb-4" />
+          <h2 className="text-3xl font-bold mb-2 text-gray-900">Video Meetings</h2>
+          <p className="text-gray-500 mb-8">Sign in to create or join video meetings</p>
+          <Button onClick={() => router.push("/login")} className="bg-red-600 hover:bg-red-700 px-8 py-6 text-lg text-white">Sign In</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 p-4 md:p-8">
