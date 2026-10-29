@@ -10,24 +10,33 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 const CATEGORIES = ["Music", "Gaming", "Movies", "News", "Sports", "Technology", "Comedy", "Education", "Science", "Travel", "Food", "Fashion", "Nature"];
 
-// ✅ NAYA: Direct Video Tag as Thumbnail (Bina Canvas ke, 100% fast)
+// ✅ VideoThumbnail with Fallback
 function VideoThumbnail({ video }: { video: any }) {
-  // Force HTTPS
+  const [hasError, setHasError] = useState(false);
   let videoUrl = video?.filepath || "";
-  if (videoUrl.startsWith("http://")) {
-    videoUrl = videoUrl.replace("http://", "https://");
-  }
+  if (videoUrl.startsWith("http://")) videoUrl = videoUrl.replace("http://", "https://");
+
+  // Fallback image (YouTube style placeholder)
+  const fallbackImage = "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=300&q=80";
 
   return (
     <div className="relative w-28 sm:w-32 aspect-video bg-gray-200 rounded-md overflow-hidden flex-shrink-0 shadow-sm border border-gray-300">
-      <video
-        src={`${videoUrl}#t=1`} // #t=1 se video ka 1st second frame load hota hai
-        className="object-cover w-full h-full pointer-events-none"
-        preload="metadata"
-        muted
-        playsInline
-      />
+      {hasError || !videoUrl ? (
+        <img src={fallbackImage} alt="video" className="w-full h-full object-cover" />
+      ) : (
+        <video
+          src={`${videoUrl}#t=1`}
+          className="object-cover w-full h-full pointer-events-none"
+          preload="metadata"
+          muted
+          playsInline
+          onError={() => setHasError(true)} // ✅ Error pe fallback lagao
+        />
+      )}
       <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/30 transition-opacity">
+        <PlaySquare className="w-8 h-8 text-white" />
+      </div>
     </div>
   );
 }

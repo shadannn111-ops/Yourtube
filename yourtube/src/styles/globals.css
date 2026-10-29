@@ -20,21 +20,37 @@ body {
 html, body {
   height: 100%;
   margin: 0;
-  /* ✅ Default: Poore app me text select nahi hoga */
   user-select: none;
   -webkit-user-select: none;
 }
 
 /* ✅ Sirf Comments aur Input fields me text select ho sake */
-.selectable-text, 
-textarea, 
-input,
-p.comment-text {
+.selectable-text, textarea, input, p.comment-text {
   user-select: text !important;
   -webkit-user-select: text !important;
 }
 
-/* ✅ Animations */
+/* ✅ Page Transition Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-transition {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* ✅ Skeleton Loading Animation */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+.skeleton {
+  background: #e5e5e5;
+  background-image: linear-gradient(90deg, #e5e5e5 0px, #f5f5f5 40px, #e5e5e5 80px);
+  background-size: 1000px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
 @keyframes blob {
   0% { transform: translate(0px, 0px) scale(1); }
   33% { transform: translate(30px, -50px) scale(1.1); }
