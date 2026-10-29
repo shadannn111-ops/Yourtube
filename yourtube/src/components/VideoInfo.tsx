@@ -104,41 +104,71 @@ const VideoInfo = ({ video }: any) => {
   };
 
   return (
-    <div className="space-y-4 text-foreground">
-      <h1 className="text-xl font-semibold">{video?.videotitle}</h1>
+    <div className="space-y-5 text-gray-900 mt-4">
+      <h1 className="text-2xl font-bold">{video?.videotitle}</h1>
 
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* ✅ Channel Info & Subscribe Button */}
         <div className="flex items-center gap-4">
-          <Avatar className="w-10 h-10"><AvatarFallback>{video?.videochanel?.[0]}</AvatarFallback></Avatar>
+          <Avatar className="w-12 h-12 border border-gray-200 shadow-sm">
+            <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-bold">{video?.videochanel?.[0]}</AvatarFallback>
+          </Avatar>
           <div>
-            <h3 className="font-medium">{video?.videochanel}</h3>
-            <p className="text-sm text-muted-foreground">1.2M subscribers</p>
+            <h3 className="font-bold text-lg leading-tight">{video?.videochanel}</h3>
+            <p className="text-sm text-gray-500 font-medium">1.2M subscribers</p>
           </div>
-          <Button onClick={handleSubscribe} className={`ml-4 ${isSubscribed ? "bg-muted text-foreground hover:bg-muted/80" : "bg-red-600 hover:bg-red-700 text-white"}`}>
+          
+          {/* ✅ Premium Subscribe Button */}
+          <Button 
+            onClick={handleSubscribe} 
+            className={`ml-4 rounded-full px-6 font-bold shadow-md transition-all transform hover:-translate-y-0.5 ${
+              isSubscribed 
+                ? "bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-none border border-gray-200" 
+                : "bg-red-600 hover:bg-red-700 text-white shadow-red-600/30"
+            }`}
+          >
             {isSubscribed ? "Subscribed" : "Subscribe"}
           </Button>
         </div>
 
+        {/* ✅ Action Buttons (Rounded, Hover Effect) */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-muted rounded-full">
-            <Button variant="ghost" size="sm" className="rounded-l-full hover:bg-background/50" onClick={handleLike}><ThumbsUp className={`w-5 h-5 mr-2 ${isLiked ? "fill-foreground text-foreground" : ""}`} />{likes?.toLocaleString()}</Button>
-            <div className="w-px h-6 bg-border" />
-            <Button variant="ghost" size="sm" className="rounded-r-full hover:bg-background/50" onClick={handleDislike}><ThumbsDown className={`w-5 h-5 mr-2 ${isDisliked ? "fill-foreground text-foreground" : ""}`} />{dislikes?.toLocaleString()}</Button>
+          <div className="flex items-center bg-gray-100 rounded-full">
+            <Button variant="ghost" size="sm" className="rounded-l-full hover:bg-gray-200 font-medium px-4" onClick={handleLike}>
+              <ThumbsUp className={`w-5 h-5 mr-2 ${isLiked ? "fill-gray-900 text-gray-900" : ""}`} />{likes?.toLocaleString()}
+            </Button>
+            <div className="w-px h-6 bg-gray-300" />
+            <Button variant="ghost" size="sm" className="rounded-r-full hover:bg-gray-200 font-medium px-4" onClick={handleDislike}>
+              <ThumbsDown className={`w-5 h-5 mr-2 ${isDisliked ? "fill-gray-900 text-gray-900" : ""}`} />{dislikes?.toLocaleString()}
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" className={`bg-muted rounded-full hover:bg-background/50 ${isWatchLater ? "text-primary" : ""}`} onClick={handleWatchLater}><Clock className="w-5 h-5 mr-2" />{isWatchLater ? "Saved" : "Watch Later"}</Button>
-          <Button variant="ghost" size="sm" className="bg-muted rounded-full hover:bg-background/50" onClick={handleShare}><Share className="w-5 h-5 mr-2" />Share</Button>
-          <Button variant="ghost" size="sm" className="bg-muted rounded-full hover:bg-background/50" onClick={handleDownload} disabled={downloadStatus === "Downloaded successfully!"}><Download className="w-5 h-5 mr-2" />{downloadStatus === "Downloaded successfully!" ? "Downloaded" : "Download"}</Button>
-          <Button variant="ghost" size="icon" className="bg-muted rounded-full hover:bg-background/50"><MoreHorizontal className="w-5 h-5" /></Button>
+          
+          <Button variant="ghost" size="sm" className={`bg-gray-100 rounded-full hover:bg-gray-200 font-medium px-4 ${isWatchLater ? "text-red-600" : ""}`} onClick={handleWatchLater}>
+            <Clock className="w-5 h-5 mr-2" />{isWatchLater ? "Saved" : "Watch Later"}
+          </Button>
+          
+          <Button variant="ghost" size="sm" className="bg-gray-100 rounded-full hover:bg-gray-200 font-medium px-4" onClick={handleShare}>
+            <Share className="w-5 h-5 mr-2" />Share
+          </Button>
+          
+          <Button variant="ghost" size="sm" className="bg-gray-100 rounded-full hover:bg-gray-200 font-medium px-4" onClick={handleDownload} disabled={downloadStatus === "Downloaded successfully!"}>
+            <Download className="w-5 h-5 mr-2" />{downloadStatus === "Downloaded successfully!" ? "Downloaded" : "Download"}
+          </Button>
+          
+          <Button variant="ghost" size="icon" className="bg-gray-100 rounded-full hover:bg-gray-200"><MoreHorizontal className="w-5 h-5" /></Button>
         </div>
       </div>
 
-      <div className="bg-muted rounded-lg p-4">
-        <div className="flex gap-4 text-sm font-medium mb-2">
+      {/* ✅ Description Box */}
+      <div className="bg-gray-50 hover:bg-gray-100 transition-colors rounded-2xl p-4 cursor-pointer" onClick={() => setShowFullDescription(!showFullDescription)}>
+        <div className="flex gap-3 text-sm font-bold mb-2">
           <span>{video?.views?.toLocaleString()} views</span>
           <span>{formatDistanceToNow(new Date(video?.createdAt))} ago</span>
         </div>
-        <div className={`text-sm ${showFullDescription ? "" : "line-clamp-3"}`}><p>{video?.description || "No description"}</p></div>
-        <Button variant="ghost" size="sm" className="mt-2 p-0 h-auto font-medium hover:bg-transparent text-primary" onClick={() => setShowFullDescription(!showFullDescription)}>{showFullDescription ? "Show less" : "Show more"}</Button>
+        <div className={`text-sm ${showFullDescription ? "" : "line-clamp-2"}`}>
+          <p>{video?.description || "No description"}</p>
+        </div>
+        <p className="text-sm font-bold mt-2">{showFullDescription ? "Show less" : "Show more"}</p>
       </div>
     </div>
   );
