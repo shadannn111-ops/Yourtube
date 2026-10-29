@@ -1,125 +1,114 @@
-﻿import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { useUser } from "@/lib/AuthContext";
+﻿import { useRouter } from "next/router";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Video, Plus, LogIn, Users, Clock, Copy, Check } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, PhoneOff, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-import axiosInstance from "@/lib/axiosinstance";
+import { useUser } from "@/lib/AuthContext";
 
-export default function MeetingHome() {
-  const { user } = useUser();
+export default function MeetingRoom() {
   const router = useRouter();
-  const [roomId, setRoomId] = useState("");
-  const [title, setTitle] = useState("");
-  const [maxParticipants, setMaxParticipants] = useState(10);
-  const [duration, setDuration] = useState(60);
-  const [meetings, setMeetings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { roomId } = router.query;
+  const { user } = useUser();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isAudioOn, setIsAudioOn] = useState(true);
+  const [copied, setCopied] = useState(false);
 
-  const getUserId = () => user?._id || user?.id || null;
-
-  useEffect(() => { 
-    if (user) fetchMeetings(); 
-  }, [user]);
-
-  const fetchMeetings = async () => {
-    try {
-      const userId = getUserId();
-      if (!userId) return;
-      const res = await axiosInstance.get(`/meeting/user/${userId}`);
-      setMeetings(res.data);
-    } catch (error) { console.log(error); }
-  };
-
-  const handleCreateMeeting = async () => {
-    const userId = getUserId();
-    if (!userId) { toast.error("Please login first"); return; }
-    
-    setLoading(true);
-    try {
-      const res = await axiosInstance.post("/meeting/create", {
-        userId: userId, 
-        title: title || "Video Call", 
-        maxParticipants, 
-        duration,
-      });
-      
-      if (res.data.success) { 
-        toast.success("Meeting created!"); 
-        router.push("/meeting/" + res.data.meeting.roomId); 
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        setStream(mediaStream);
+        if (videoRef.current) videoRef.current.srcObject = mediaStream;
+      } catch (error) {
+        toast.error("Camera/Mic access denied");
       }
-    } catch (error: any) { 
-      console.error("Meeting Error:", error);
-      toast.error(error.response?.data?.message || "Failed to create meeting"); 
-    } finally { 
-      setLoading(false); 
+    };
+    startCamera();
+
+    return () => {
+      if (stream) stream.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  const toggleVideo = () => {
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0];
+      videoTrack.enabled = !videoTrack.enabled;
+      setIsVideoOn(videoTrack.enabled);
     }
   };
 
-  const handleJoinMeeting = () => {
-    if (!roomId.trim()) { toast.error("Please enter room ID"); return; }
-    router.push("/meeting/" + roomId.toUpperCase());
+  const toggleAudio = () => {
+    if (stream) {
+      const audioTrack = stream.getAudioTracks()[0];
+      audioTrack.enabled = !audioTrack.enabled;
+      setIsAudioOn(audioTrack.enabled);
+    }
   };
 
-  const copyRoomId = (id: string) => {
-    navigator.clipboard.writeText(id); setCopiedId(id); toast.success("Room ID copied!");
-    setTimeout(() => setCopiedId(null), 2000);
+  const leaveMeeting = () => {
+    if (stream) stream.getTracks().forEach((track) => track.stop());
+    router.push("/meeting");
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <Video className="w-20 h-20 mx-auto text-red-600 mb-4" />
-          <h2 className="text-3xl font-bold mb-2 text-gray-900">Video Meetings</h2>
-          <p className="text-gray-500 mb-8">Sign in to create or join video meetings</p>
-          <Button onClick={() => router.push("/login")} className="bg-red-600 hover:bg-red-700 px-8 py-6 text-lg text-white">Sign In</Button>
-        </div>
-      </div>
-    );
-  }
+  const copyRoomId = () => {
+    navigator.clipboard.writeText(roomId as string);
+    setCopied(true);
+    toast.success("Room ID copied!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!roomId) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-10 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-          <div className="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center shadow-lg"><Video className="w-8 h-8 text-white" /></div>
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Video Meetings</h1>
-            <p className="text-gray-500 font-medium mt-1">Connect with anyone, anywhere, anytime</p>
-          </div>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      {/* Header */}
+      <div className="bg-gray-800 p-4 flex justify-between items-center shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="bg-red-600 p-2 rounded-lg"><Video className="w-5 h-5 text-white" /></div>
+          <h1 className="text-lg font-bold">Meeting Room</h1>
         </div>
+        <div className="flex items-center gap-2 bg-gray-700 px-4 py-2 rounded-full">
+          <span className="text-sm font-mono text-gray-300">{roomId}</span>
+          <button onClick={copyRoomId} className="text-gray-400 hover:text-white">
+            {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-          <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm hover:shadow-lg transition-all">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center"><Plus className="w-6 h-6 text-red-600" /></div>
-              <h2 className="text-2xl font-bold text-gray-900">Create Meeting</h2>
-            </div>
-            <div className="space-y-5">
-              <div><label className="text-sm font-semibold text-gray-700 mb-2 block">Meeting Title</label><Input placeholder="e.g., Team Standup" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-gray-50 border-gray-200 text-gray-900 h-12 rounded-xl focus:border-red-500" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1"><Users className="w-4 h-4" />Max Participants</label><Input type="number" min={2} max={50} value={maxParticipants} onChange={(e) => setMaxParticipants(parseInt(e.target.value))} className="bg-gray-50 border-gray-200 text-gray-900 h-12 rounded-xl" /></div>
-                <div><label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1"><Clock className="w-4 h-4" />Duration (min)</label><Input type="number" min={5} max={480} value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} className="bg-gray-50 border-gray-200 text-gray-900 h-12 rounded-xl" /></div>
+      {/* Video Grid */}
+      <div className="flex-1 p-6 flex items-center justify-center">
+        <div className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl">
+          <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+          
+          {!isVideoOn && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+              <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center text-4xl font-bold">
+                {user?.name?.[0] || "U"}
               </div>
-              <Button onClick={handleCreateMeeting} disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg font-bold rounded-xl shadow-md hover:shadow-lg transition-all">{loading ? "Creating..." : "Create New Meeting"}</Button>
             </div>
-          </div>
+          )}
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm hover:shadow-lg transition-all">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center"><LogIn className="w-6 h-6 text-blue-600" /></div>
-              <h2 className="text-2xl font-bold text-gray-900">Join Meeting</h2>
-            </div>
-            <div className="space-y-5">
-              <div><label className="text-sm font-semibold text-gray-700 mb-2 block">Room ID</label><Input placeholder="Enter Room ID" value={roomId} onChange={(e) => setRoomId(e.target.value.toUpperCase())} className="bg-gray-50 border-gray-200 text-gray-900 font-mono text-lg h-12 rounded-xl focus:border-blue-500" /></div>
-              <Button onClick={handleJoinMeeting} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg font-bold rounded-xl shadow-md hover:shadow-lg transition-all">Join Meeting</Button>
-              <p className="text-xs text-gray-500 text-center font-medium">Ask the host for the Room ID to join</p>
-            </div>
+          <div className="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded-lg text-sm font-medium flex items-center gap-2">
+            {user?.name || "You"} (Host)
+            {!isAudioOn && <MicOff className="w-3 h-3 text-red-500" />}
           </div>
         </div>
+      </div>
+
+      {/* Controls */}
+      <div className="bg-gray-800 p-6 flex justify-center gap-4 shadow-inner">
+        <button onClick={toggleAudio} className={`p-4 rounded-full transition-all ${isAudioOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-600 hover:bg-red-700"}`}>
+          {isAudioOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
+        </button>
+        <button onClick={toggleVideo} className={`p-4 rounded-full transition-all ${isVideoOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-600 hover:bg-red-700"}`}>
+          {isVideoOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
+        </button>
+        <button onClick={leaveMeeting} className="p-4 rounded-full bg-red-600 hover:bg-red-700 px-8 flex items-center gap-2 font-bold transition-all">
+          <PhoneOff className="w-6 h-6" /> Leave
+        </button>
       </div>
     </div>
   );
