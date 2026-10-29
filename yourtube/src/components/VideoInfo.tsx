@@ -31,10 +31,24 @@ const VideoInfo = ({ video }: any) => {
     setlikes(video?.Like || 0); setDislikes(video?.Dislike || 0); setIsLiked(false); setIsDisliked(false);
   }, [video]);
 
+  // ✅ FIX: LocalStorage se subscribe state load karo
   useEffect(() => {
     const checkSubStatus = async () => {
       if (user && video?.uploader) {
-        try { const res = await axiosInstance.get(`/subscribe/check/${video.uploader}/${getUserId()}`); setIsSubscribed(res.data.isSubscribed); } catch (error) { console.log(error); }
+        try {
+          // Pehle localStorage check karo
+          const localSub = localStorage.getItem(`sub_${getUserId()}_${video.uploader}`);
+          if (localSub === "true") {
+            setIsSubscribed(true);
+          } else {
+            // Agar local me nahi hai, toh backend se check karo
+            const res = await axiosInstance.get(`/subscribe/check/${video.uploader}/${getUserId()}`);
+            setIsSubscribed(res.data.isSubscribed);
+            if (res.data.isSubscribed) {
+              localStorage.setItem(`sub_${getUserId()}_${video.uploader}`, "true");
+            }
+          }
+        } catch (error) { console.log(error); }
       }
     };
     checkSubStatus();
@@ -99,25 +113,35 @@ const VideoInfo = ({ video }: any) => {
     } catch (error: any) { toast.error(error.response?.data?.message || "Failed to download"); }
   };
 
+  // ✅ FIX: Subscribe function with LocalStorage
   const handleSubscribe = async () => {
     if (!user) return toast.error("Please login first");
     const channelId = video?.uploader;
     if (!channelId) return toast.error("Channel information missing");
+    
     try {
       const res = await axiosInstance.post(`/subscribe/${channelId}`, { subscriberId: getUserId() });
-      if (res.data.subscribed) { setIsSubscribed(true); toast.success("Subscribed! 🎉"); } 
-      else { setIsSubscribed(false); toast.info("Unsubscribed"); }
-    } catch (error: any) { toast.error("Failed to subscribe"); }
+      
+      if (res.data.subscribed) { 
+        setIsSubscribed(true); 
+        localStorage.setItem(`sub_${getUserId()}_${channelId}`, "true"); // ✅ Save in local
+        toast.success("Subscribed! 🎉"); 
+      } else { 
+        setIsSubscribed(false); 
+        localStorage.removeItem(`sub_${getUserId()}_${channelId}`); // ✅ Remove from local
+        toast.info("Unsubscribed"); 
+      }
+    } catch (error: any) { 
+      toast.error("Failed to subscribe"); 
+    }
   };
 
-  // ✅ Common Button Class for Instant Feel
   const actionBtnClass = "flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-sm px-4 py-2 rounded-full transition-all duration-150 active:scale-95 select-none cursor-pointer";
 
   return (
     <div className="space-y-4 text-gray-900 mt-2">
       <h1 className="text-xl md:text-2xl font-bold leading-tight select-none">{video?.videotitle}</h1>
 
-      {/* ✅ Perfect Layout: Channel, Subscribe & Actions (Responsive) */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-4 justify-between">
         
         {/* Left: Channel Info + Subscribe */}
@@ -130,6 +154,7 @@ const VideoInfo = ({ video }: any) => {
             <p className="text-xs md:text-sm text-gray-500 font-medium">1.2M subscribers</p>
           </div>
           
+          {/* ✅ Subscribe Button with Dynamic Text and Style */}
           <Button 
             onClick={handleSubscribe} 
             className={`rounded-full px-6 font-bold shadow-sm transition-all duration-150 active:scale-95 ${
@@ -142,10 +167,8 @@ const VideoInfo = ({ video }: any) => {
           </Button>
         </div>
 
-        {/* Right: Action Buttons (No scroll, wrap on small screens) */}
+        {/* Right: Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
-          
-          {/* Like / Dislike Group */}
           <div className="flex items-center bg-gray-100 rounded-full">
             <button onClick={handleLike} className="flex items-center gap-2 hover:bg-gray-200 px-4 py-2 rounded-l-full transition-all duration-150 active:scale-95 select-none cursor-pointer border-r border-gray-300">
               <ThumbsUp className={`w-5 h-5 ${isLiked ? "fill-black" : ""}`} />
@@ -168,7 +191,6 @@ const VideoInfo = ({ video }: any) => {
             <Download className="w-5 h-5" /> {downloadStatus === "Downloaded successfully!" ? "Downloaded" : "Download"}
           </button>
 
-          {/* 3-Dot Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all duration-150 active:scale-95 select-none cursor-pointer">
@@ -191,7 +213,6 @@ const VideoInfo = ({ video }: any) => {
         </div>
       </div>
 
-      {/* ✅ Description Box */}
       <div className="bg-gray-100 hover:bg-gray-200 transition-colors duration-200 rounded-xl p-3 md:p-4 cursor-pointer mt-4 select-none" onClick={() => setShowFullDescription(!showFullDescription)}>
         <div className="flex gap-2 text-sm font-bold mb-1">
           <span>{video?.views?.toLocaleString()} views</span>
