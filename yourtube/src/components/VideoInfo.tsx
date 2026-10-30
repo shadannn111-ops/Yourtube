@@ -6,13 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 const VideoInfo = ({ video }: any) => {
   const [likes, setlikes] = useState(video?.Like || 0);
@@ -23,7 +17,7 @@ const VideoInfo = ({ video }: any) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const { user } = useUser();
   const [isWatchLater, setIsWatchLater] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false); // ✅ Download loading state
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const getUserId = () => user?._id || user?.id || null;
 
@@ -31,10 +25,14 @@ const VideoInfo = ({ video }: any) => {
     setlikes(video?.Like || 0); setDislikes(video?.Dislike || 0); setIsLiked(false); setIsDisliked(false);
   }, [video]);
 
+  // ✅ FIX 1: Subscribe State hamesha backend se check karo
   useEffect(() => {
     const checkSubStatus = async () => {
       if (user && video?.uploader) {
-        try { const res = await axiosInstance.get(`/subscribe/check/${video.uploader}/${getUserId()}`); setIsSubscribed(res.data.isSubscribed); } catch (error) { console.log(error); }
+        try { 
+          const res = await axiosInstance.get(`/subscribe/check/${video.uploader}/${getUserId()}`); 
+          setIsSubscribed(res.data.isSubscribed); 
+        } catch (error) { console.log(error); }
       }
     };
     checkSubStatus();
@@ -90,38 +88,35 @@ const VideoInfo = ({ video }: any) => {
     } catch (error) { console.log(error); }
   };
 
-  // ✅ FIXED: Direct Download Logic (Naye tab me kholo)
   const handleDownload = async () => {
     if (!user) return toast.error("Please login first");
-    
     setIsDownloading(true);
     try {
-      // Backend me download record save karo
       const res = await axiosInstance.post("/download/download", { userId: getUserId(), videoId: video._id, videoTitle: video.videotitle, thumbnail: video.thumbnail });
-      
       if (res.data.success) {
         let videoUrl = video?.filepath || "";
         if (videoUrl.startsWith("http://")) videoUrl = videoUrl.replace("http://", "https://");
-        
-        // ✅ CORS bypass trick: Video ko naye tab me kholo
         window.open(videoUrl, "_blank");
-        toast.success("Video opened in new tab. Click right-click -> Save Video As");
+        toast.success("Video opened in new tab.");
       } else { toast.error(res.data.message || "Failed to download"); }
-    } catch (error: any) { 
-      toast.error(error.response?.data?.message || "Failed to download"); 
-    } finally {
-      setIsDownloading(false);
-    }
+    } catch (error: any) { toast.error(error.response?.data?.message || "Failed to download"); } 
+    finally { setIsDownloading(false); }
   };
 
+  // ✅ FIX 2: Subscribe function sirf backend bharosa karega
   const handleSubscribe = async () => {
     if (!user) return toast.error("Please login first");
     const channelId = video?.uploader;
     if (!channelId) return toast.error("Channel information missing");
     try {
       const res = await axiosInstance.post(`/subscribe/${channelId}`, { subscriberId: getUserId() });
-      if (res.data.subscribed) { setIsSubscribed(true); toast.success("Subscribed! 🎉"); } 
-      else { setIsSubscribed(false); toast.info("Unsubscribed"); }
+      if (res.data.subscribed) { 
+        setIsSubscribed(true); 
+        toast.success("Subscribed! 🎉"); 
+      } else { 
+        setIsSubscribed(false); 
+        toast.info("Unsubscribed"); 
+      }
     } catch (error: any) { toast.error("Failed to subscribe"); }
   };
 
@@ -141,10 +136,7 @@ const VideoInfo = ({ video }: any) => {
             <p className="text-xs md:text-sm text-gray-500 font-medium">1.2M subscribers</p>
           </div>
           
-          <Button 
-            onClick={handleSubscribe} 
-            className={`rounded-full px-6 font-bold shadow-sm transition-all duration-150 active:scale-95 ${isSubscribed ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "bg-red-600 hover:bg-red-700 text-white"}`}
-          >
+          <Button onClick={handleSubscribe} className={`rounded-full px-6 font-bold shadow-sm transition-all duration-150 active:scale-95 ${isSubscribed ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "bg-red-600 hover:bg-red-700 text-white"}`}>
             {isSubscribed ? "Subscribed" : "Subscribe"}
           </Button>
         </div>
@@ -168,7 +160,6 @@ const VideoInfo = ({ video }: any) => {
             <Share className="w-5 h-5" /> Share
           </button>
 
-          {/* ✅ Download Button Fix */}
           <button onClick={handleDownload} disabled={isDownloading} className={`${actionBtnClass} ${isDownloading ? "opacity-50 cursor-not-allowed" : ""}`}>
             {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
             {isDownloading ? "Opening..." : "Download"}
@@ -181,16 +172,10 @@ const VideoInfo = ({ video }: any) => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-white border-gray-200 shadow-xl rounded-xl">
-              <DropdownMenuItem onClick={handleShare} className="cursor-pointer font-medium hover:bg-gray-100 py-2.5">
-                <Share className="w-4 h-4 mr-2" /> Share
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleWatchLater} className="cursor-pointer font-medium hover:bg-gray-100 py-2.5">
-                <Bookmark className="w-4 h-4 mr-2" /> {isWatchLater ? "Remove Watch Later" : "Save to Watch Later"}
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleShare} className="cursor-pointer font-medium hover:bg-gray-100 py-2.5"><Share className="w-4 h-4 mr-2" /> Share</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleWatchLater} className="cursor-pointer font-medium hover:bg-gray-100 py-2.5"><Bookmark className="w-4 h-4 mr-2" /> {isWatchLater ? "Remove Watch Later" : "Save to Watch Later"}</DropdownMenuItem>
               <DropdownMenuSeparator className="bg-gray-200" />
-              <DropdownMenuItem onClick={() => toast.info("Report submitted")} className="cursor-pointer font-medium hover:bg-gray-100 text-red-600 py-2.5">
-                <Flag className="w-4 h-4 mr-2" /> Report
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast.info("Report submitted")} className="cursor-pointer font-medium hover:bg-gray-100 text-red-600 py-2.5"><Flag className="w-4 h-4 mr-2" /> Report</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -201,9 +186,7 @@ const VideoInfo = ({ video }: any) => {
           <span>{video?.views?.toLocaleString()} views</span>
           <span>{formatDistanceToNow(new Date(video?.createdAt))} ago</span>
         </div>
-        <div className={`text-sm ${showFullDescription ? "" : "line-clamp-2"}`}>
-          <p>{video?.description || "No description provided."}</p>
-        </div>
+        <div className={`text-sm ${showFullDescription ? "" : "line-clamp-2"}`}><p>{video?.description || "No description provided."}</p></div>
         <p className="text-sm font-bold mt-2 hover:underline">{showFullDescription ? "Show less" : "Show more"}</p>
       </div>
     </div>
