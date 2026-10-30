@@ -12,6 +12,7 @@ export default function MeetingHome() {
   const router = useRouter();
   
   const [title, setTitle] = useState("");
+  const [password, setPassword] = useState(""); // ✅ Custom password
   const [maxParticipants, setMaxParticipants] = useState(10);
   const [duration, setDuration] = useState(60);
   
@@ -32,9 +33,27 @@ export default function MeetingHome() {
     );
   }
 
-  const handleCreate = () => {
-    // ✅ Seedha Create Page pe bhej do
-    router.push("/meeting/create");
+  // ✅ Create Meeting (Custom Password)
+  const handleCreate = async () => {
+    if (!password.trim()) return toast.error("Please set a meeting password");
+    
+    setLoading(true);
+    try {
+      const res = await axiosInstance.post("/meeting/create", {
+        userId: user._id || user.id,
+        title: title || "Video Call",
+        password: password, // ✅ Custom password bheja
+        maxParticipants,
+        duration,
+      });
+      
+      if (res.data.success) {
+        toast.success("Meeting created!");
+        localStorage.setItem("activeMeetingRoom", res.data.meeting.roomId);
+        router.push(`/meeting/create`); // ✅ Direct create page pe bhejo
+      }
+    } catch (error) { toast.error("Failed to create meeting"); } 
+    finally { setLoading(false); }
   };
 
   const handleJoin = async () => {
@@ -63,7 +82,7 @@ export default function MeetingHome() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Create Card */}
+          {/* ✅ Create Card (With Custom Password) */}
           <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center"><Plus className="w-6 h-6 text-red-600" /></div>
@@ -71,12 +90,24 @@ export default function MeetingHome() {
             </div>
             <div className="space-y-5">
               <div><label className="text-sm font-semibold mb-2 block">Meeting Title</label><Input placeholder="e.g., Team Standup" value={title} onChange={(e) => setTitle(e.target.value)} className="h-12 rounded-xl" /></div>
-              <div><label className="text-sm font-semibold mb-2 flex items-center gap-1"><Lock className="w-4 h-4" />Password</label><Input type="password" placeholder="Set a secure password" disabled className="h-12 rounded-xl bg-gray-100" value="Default" /></div>
+              
+              {/* ✅ Password Field Working */}
+              <div>
+                <label className="text-sm font-semibold mb-2 flex items-center gap-1"><Lock className="w-4 h-4" />Meeting Password</label>
+                <Input 
+                  type="password" 
+                  placeholder="Set a secure password" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  className="h-12 rounded-xl" 
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-sm font-semibold mb-2 flex items-center gap-1"><Users className="w-4 h-4" />Max Participants</label><Input type="number" value={maxParticipants} onChange={(e) => setMaxParticipants(parseInt(e.target.value))} className="h-12 rounded-xl" /></div>
                 <div><label className="text-sm font-semibold mb-2 flex items-center gap-1"><Clock className="w-4 h-4" />Duration (min)</label><Input type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} className="h-12 rounded-xl" /></div>
               </div>
-              <Button onClick={handleCreate} className="w-full bg-red-600 text-white py-6 text-lg font-bold rounded-xl">Create New Meeting</Button>
+              <Button onClick={handleCreate} disabled={loading} className="w-full bg-red-600 text-white py-6 text-lg font-bold rounded-xl">{loading ? "Creating..." : "Create New Meeting"}</Button>
             </div>
           </div>
 
