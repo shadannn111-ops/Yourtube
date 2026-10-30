@@ -7,25 +7,19 @@ export const handleSubscribe = async (req, res) => {
   const { channelId } = req.params;
   const { subscriberId } = req.body;
 
-  if (!channelId || !subscriberId) {
-    return res.status(400).json({ message: "Missing channelId or subscriberId" });
-  }
+  if (!channelId || !subscriberId) return res.status(400).json({ message: "Missing IDs" });
 
   try {
-    // Check karo pehle se subscribed hai ya nahi
     const existingSub = await Subscribe.findOne({ subscriber: subscriberId, channel: channelId });
 
     if (existingSub) {
       await Subscribe.findByIdAndDelete(existingSub._id);
       return res.status(200).json({ subscribed: false, message: "Unsubscribed" });
     } else {
-      // Naya subscribe karo
       await Subscribe.create({ subscriber: subscriberId, channel: channelId });
       return res.status(200).json({ subscribed: true, message: "Subscribed" });
     }
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
+  } catch (error) { return res.status(500).json({ message: error.message }); }
 };
 
 // ✅ Get Subscribed Channels (THE FIX)
@@ -33,30 +27,44 @@ export const getSubscribedChannels = async (req, res) => {
   const { userId } = req.params;
 
   try {
-    // 1. User ki saari subscriptions nikalo
     const subscriptions = await Subscribe.find({ subscriber: userId });
     if (subscriptions.length === 0) return res.status(200).json([]);
 
-    // 2. Channel IDs nikalo
-    const channelIds = subscriptions.map((sub) => sub.channel);
+    const channelValues = subscriptions.map((sub) => sub.channel);
 
-    // 3. Sirf valid ObjectIds filter karo
-    const validIds = channelIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
-    if (validIds.length === 0) return res.status(200).json([]);
+    // ✅ Valid ObjectIds filter
+    const validIds = channelValues.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    // ✅ Purane "admin" naam wale filter
+    const nameValues = channelValues.filter((id) => !mongoose.Types.ObjectId.isValid(id));
 
-    // 4. Users fetch karo
-    const channels = await users.find({ _id: { $in: validIds } }).select("_id name channelname email image description");
+    let channels = [];
 
-    // 5. Safe data return karo (agar channelname nahi hai toh name daal do)
-    const safeChannels = channels.map((c) => ({
-      ...c.toObject(),
-      channelname: c.channelname || c.name || c.email?.split("@")[0] || "User",
+    // Agar valid ObjectIds hain toh fetch karo
+    if (validIds.length > 0) {
+      const idChannels = await users.find({ _id: { $in: validIds } }).select("_id name channelname email image description");
+      channels = [...channels, ...idChannels];
+    }
+
+    // Agar "admin" jaisa naam hai toh usse match karo
+    if (nameValues.length > 0) {
+      const nameChannels = await users.find({ 
+        $or: [
+          { name: { $in: nameValues } }, 
+          { channelname: { $in: nameValues } },
+          { email: "admin@yourtube.com" } // fallback
+        ] 
+      }).select("_id name channelname email image description");
+      channels = [...channels, ...nameChannels];
+    }
+
+    // Safe data return
+    const safeChannels = channels.map((c) => ({ 
+      ...c.toObject(), 
+      channelname: c.channelname || c.name || "User" 
     }));
 
     return res.status(200).json(safeChannels);
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
+  } catch (error) { return res.status(500).json({ message: error.message }); }
 };
 
 export const checkSubscription = async (req, res) => {
@@ -64,9 +72,7 @@ export const checkSubscription = async (req, res) => {
   try {
     const sub = await Subscribe.findOne({ subscriber: userId, channel: channelId });
     return res.status(200).json({ isSubscribed: !!sub });
-  } catch (error) {
-    return res.status(500).json({ message: "Something went wrong" });
-  }
+  } catch (error) { return res.status(500).json({ message: "Something went wrong" }); }
 };
 
 export const getSubscriberCount = async (req, res) => {
@@ -74,7 +80,5 @@ export const getSubscriberCount = async (req, res) => {
   try {
     const count = await Subscribe.countDocuments({ channel: channelId });
     return res.status(200).json({ count });
-  } catch (error) {
-    return res.status(500).json({ message: "Something went wrong" });
-  }
+  } catch (error) { return res.status(500).json({ message: "Something went wrong" }); }
 };
