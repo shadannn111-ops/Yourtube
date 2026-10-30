@@ -25,7 +25,7 @@ const VideoInfo = ({ video }: any) => {
     setlikes(video?.Like || 0); setDislikes(video?.Dislike || 0); setIsLiked(false); setIsDisliked(false);
   }, [video]);
 
-  // ✅ FIX 1: Subscribe State hamesha backend se check karo
+  // ✅ Backend se state check karo (Har reload pe)
   useEffect(() => {
     const checkSubStatus = async () => {
       if (user && video?.uploader) {
@@ -103,7 +103,6 @@ const VideoInfo = ({ video }: any) => {
     finally { setIsDownloading(false); }
   };
 
-  // ✅ FIX 2: Subscribe function sirf backend bharosa karega
   const handleSubscribe = async () => {
     if (!user) return toast.error("Please login first");
     const channelId = video?.uploader;

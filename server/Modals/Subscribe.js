@@ -3,7 +3,7 @@
 const subscribeSchema = mongoose.Schema(
   {
     subscriber: { type: String, required: true },
-    channel: { type: String, required: true }, // ✅ String hi rakho
+    channel: { type: String, required: true },
     subscribedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
