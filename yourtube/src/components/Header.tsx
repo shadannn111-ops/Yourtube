@@ -1,4 +1,4 @@
-﻿import { Bell, Menu, Mic, Search, User, Crown, Star, Award, X, ArrowLeft, Video } from "lucide-react";
+﻿import { Bell, Menu, Mic, Search, User, VideoIcon, Crown, Star, Award, X, ArrowLeft, Video } from "lucide-react";
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import Link from "next/link";
@@ -16,7 +16,7 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const router = useRouter();
 
-  // ✅ Fix: User ID nikalne ka safe tarika
+  // ✅ SAFE USER ID
   const getUserId = () => user?._id || user?.id || "";
 
   const handleSearch = (e: React.FormEvent) => {
@@ -95,22 +95,22 @@ const Header = ({ toggleSidebar }: { toggleSidebar?: () => void }) => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild><Button variant="ghost" className="relative h-8 w-8 rounded-full"><Avatar className="h-8 w-8"><AvatarImage src={user.image} /><AvatarFallback className="bg-gray-200 text-gray-800">{user.name?.[0] || "U"}</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 bg-white border-gray-200 text-gray-900" align="end" forceMount>
-                    {/* ✅ FIX: getUserId() use karo taaki undefined na ho */}
+                    {/* ✅ FIXED: Sahi ID use ho rahi hai */}
                     {user?.channelname ? (
                       <DropdownMenuItem asChild>
-                        <Link href={`/channel/${getUserId()}`}>Your channel</Link>
+                        <Link href={`/channel/${getUserId()}`} className="cursor-pointer font-medium">Your channel</Link>
                       </DropdownMenuItem>
                     ) : (
                       <div className="px-2 py-1.5">
                         <Button variant="secondary" size="sm" className="w-full" onClick={() => setisdialogeopen(true)}>Create Channel</Button>
                       </div>
                     )}
-                    <DropdownMenuItem asChild><Link href="/history">History</Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/liked">Liked videos</Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/watch-later">Watch later</Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/subscription">Manage Subscription</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/history" className="cursor-pointer">History</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/liked" className="cursor-pointer">Liked videos</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/watch-later" className="cursor-pointer">Watch later</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/subscription" className="cursor-pointer">Manage Subscription</Link></DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-gray-200" />
-                    <DropdownMenuItem onClick={logout} className="text-red-600 font-medium">Sign out</DropdownMenuItem>
+                    <DropdownMenuItem onClick={logout} className="text-red-600 font-medium cursor-pointer">Sign out</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
