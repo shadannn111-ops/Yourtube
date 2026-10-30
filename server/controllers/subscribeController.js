@@ -28,24 +28,31 @@ export const getSubscribedChannels = async (req, res) => {
     const subscriptions = await Subscribe.find({ subscriber: userId });
     if (subscriptions.length === 0) return res.status(200).json([]);
 
-    const channelValues = subscriptions.map((sub) => sub.channel);
-    const validIds = channelValues.filter((id) => mongoose.Types.ObjectId.isValid(id));
-    const nameValues = channelValues.filter((id) => !mongoose.Types.ObjectId.isValid(id));
-
     let channels = [];
+    
+    // ✅ Admin User ID nikaalo (YourTube Official)
+    const adminUser = await users.findOne({ email: "admin@yourtube.com" });
 
-    if (validIds.length > 0) {
-      const idChannels = await users.find({ _id: { $in: validIds } }).select("_id name channelname email image description");
-      channels = [...channels, ...idChannels];
+    for (const sub of subscriptions) {
+      let channelId = sub.channel;
+
+      // ✅ FIX: Agar purana "admin" string hai, toh usko adminUser ki ID se replace karo
+      if (channelId === "admin" && adminUser) {
+        channelId = adminUser._id.toString();
+      }
+
+      if (mongoose.Types.ObjectId.isValid(channelId)) {
+        const user = await users.findById(channelId).select("_id name channelname email image description");
+        if (user) {
+          channels.push({ ...user.toObject(), channelname: user.channelname || user.name || "YourTube Official" });
+        }
+      }
     }
 
-    if (nameValues.length > 0) {
-      const nameChannels = await users.find({ $or: [{ name: { $in: nameValues } }, { channelname: { $in: nameValues } }] }).select("_id name channelname email image description");
-      channels = [...channels, ...nameChannels];
-    }
+    // ✅ Duplicate channels hatao (agar koi ho)
+    const uniqueChannels = channels.filter((v, i, a) => a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
-    const safeChannels = channels.map((c) => ({ ...c.toObject(), channelname: c.channelname || c.name || "User" }));
-    return res.status(200).json(safeChannels);
+    return res.status(200).json(uniqueChannels);
   } catch (error) { return res.status(500).json({ message: error.message }); }
 };
 
