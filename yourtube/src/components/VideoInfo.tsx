@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
-import { Clock, Download, MoreHorizontal, Share, ThumbsDown, ThumbsUp, Flag, Bookmark } from "lucide-react";
+import { Clock, Download, MoreHorizontal, Share, ThumbsDown, ThumbsUp, Flag, Bookmark, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
@@ -23,7 +23,7 @@ const VideoInfo = ({ video }: any) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const { user } = useUser();
   const [isWatchLater, setIsWatchLater] = useState(false);
-  const [downloadStatus, setDownloadStatus] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false); // ✅ Download loading state
 
   const getUserId = () => user?._id || user?.id || null;
 
@@ -31,24 +31,10 @@ const VideoInfo = ({ video }: any) => {
     setlikes(video?.Like || 0); setDislikes(video?.Dislike || 0); setIsLiked(false); setIsDisliked(false);
   }, [video]);
 
-  // ✅ FIX: LocalStorage se subscribe state load karo
   useEffect(() => {
     const checkSubStatus = async () => {
       if (user && video?.uploader) {
-        try {
-          // Pehle localStorage check karo
-          const localSub = localStorage.getItem(`sub_${getUserId()}_${video.uploader}`);
-          if (localSub === "true") {
-            setIsSubscribed(true);
-          } else {
-            // Agar local me nahi hai, toh backend se check karo
-            const res = await axiosInstance.get(`/subscribe/check/${video.uploader}/${getUserId()}`);
-            setIsSubscribed(res.data.isSubscribed);
-            if (res.data.isSubscribed) {
-              localStorage.setItem(`sub_${getUserId()}_${video.uploader}`, "true");
-            }
-          }
-        } catch (error) { console.log(error); }
+        try { const res = await axiosInstance.get(`/subscribe/check/${video.uploader}/${getUserId()}`); setIsSubscribed(res.data.isSubscribed); } catch (error) { console.log(error); }
       }
     };
     checkSubStatus();
@@ -104,36 +90,39 @@ const VideoInfo = ({ video }: any) => {
     } catch (error) { console.log(error); }
   };
 
+  // ✅ FIXED: Direct Download Logic (Naye tab me kholo)
   const handleDownload = async () => {
     if (!user) return toast.error("Please login first");
+    
+    setIsDownloading(true);
     try {
+      // Backend me download record save karo
       const res = await axiosInstance.post("/download/download", { userId: getUserId(), videoId: video._id, videoTitle: video.videotitle, thumbnail: video.thumbnail });
-      if (res.data.success) { setDownloadStatus("Downloaded successfully!"); toast.success("Video downloaded!"); } 
-      else { toast.error(res.data.message || "Failed to download"); }
-    } catch (error: any) { toast.error(error.response?.data?.message || "Failed to download"); }
+      
+      if (res.data.success) {
+        let videoUrl = video?.filepath || "";
+        if (videoUrl.startsWith("http://")) videoUrl = videoUrl.replace("http://", "https://");
+        
+        // ✅ CORS bypass trick: Video ko naye tab me kholo
+        window.open(videoUrl, "_blank");
+        toast.success("Video opened in new tab. Click right-click -> Save Video As");
+      } else { toast.error(res.data.message || "Failed to download"); }
+    } catch (error: any) { 
+      toast.error(error.response?.data?.message || "Failed to download"); 
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
-  // ✅ FIX: Subscribe function with LocalStorage
   const handleSubscribe = async () => {
     if (!user) return toast.error("Please login first");
     const channelId = video?.uploader;
     if (!channelId) return toast.error("Channel information missing");
-    
     try {
       const res = await axiosInstance.post(`/subscribe/${channelId}`, { subscriberId: getUserId() });
-      
-      if (res.data.subscribed) { 
-        setIsSubscribed(true); 
-        localStorage.setItem(`sub_${getUserId()}_${channelId}`, "true"); // ✅ Save in local
-        toast.success("Subscribed! 🎉"); 
-      } else { 
-        setIsSubscribed(false); 
-        localStorage.removeItem(`sub_${getUserId()}_${channelId}`); // ✅ Remove from local
-        toast.info("Unsubscribed"); 
-      }
-    } catch (error: any) { 
-      toast.error("Failed to subscribe"); 
-    }
+      if (res.data.subscribed) { setIsSubscribed(true); toast.success("Subscribed! 🎉"); } 
+      else { setIsSubscribed(false); toast.info("Unsubscribed"); }
+    } catch (error: any) { toast.error("Failed to subscribe"); }
   };
 
   const actionBtnClass = "flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-sm px-4 py-2 rounded-full transition-all duration-150 active:scale-95 select-none cursor-pointer";
@@ -143,8 +132,6 @@ const VideoInfo = ({ video }: any) => {
       <h1 className="text-xl md:text-2xl font-bold leading-tight select-none">{video?.videotitle}</h1>
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-4 justify-between">
-        
-        {/* Left: Channel Info + Subscribe */}
         <div className="flex items-center gap-3">
           <Avatar className="w-10 h-10 md:w-12 md:h-12 border border-gray-200 shadow-sm">
             <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-bold">{video?.videochanel?.[0]}</AvatarFallback>
@@ -154,20 +141,14 @@ const VideoInfo = ({ video }: any) => {
             <p className="text-xs md:text-sm text-gray-500 font-medium">1.2M subscribers</p>
           </div>
           
-          {/* ✅ Subscribe Button with Dynamic Text and Style */}
           <Button 
             onClick={handleSubscribe} 
-            className={`rounded-full px-6 font-bold shadow-sm transition-all duration-150 active:scale-95 ${
-              isSubscribed 
-                ? "bg-gray-200 text-gray-800 hover:bg-gray-300" 
-                : "bg-red-600 hover:bg-red-700 text-white"
-            }`}
+            className={`rounded-full px-6 font-bold shadow-sm transition-all duration-150 active:scale-95 ${isSubscribed ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "bg-red-600 hover:bg-red-700 text-white"}`}
           >
             {isSubscribed ? "Subscribed" : "Subscribe"}
           </Button>
         </div>
 
-        {/* Right: Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center bg-gray-100 rounded-full">
             <button onClick={handleLike} className="flex items-center gap-2 hover:bg-gray-200 px-4 py-2 rounded-l-full transition-all duration-150 active:scale-95 select-none cursor-pointer border-r border-gray-300">
@@ -187,8 +168,10 @@ const VideoInfo = ({ video }: any) => {
             <Share className="w-5 h-5" /> Share
           </button>
 
-          <button onClick={handleDownload} disabled={downloadStatus === "Downloaded successfully!"} className={`${actionBtnClass} ${downloadStatus === "Downloaded successfully!" ? "opacity-50 cursor-not-allowed" : ""}`}>
-            <Download className="w-5 h-5" /> {downloadStatus === "Downloaded successfully!" ? "Downloaded" : "Download"}
+          {/* ✅ Download Button Fix */}
+          <button onClick={handleDownload} disabled={isDownloading} className={`${actionBtnClass} ${isDownloading ? "opacity-50 cursor-not-allowed" : ""}`}>
+            {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+            {isDownloading ? "Opening..." : "Download"}
           </button>
 
           <DropdownMenu>
