@@ -1,14 +1,13 @@
 ﻿import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Video, VideoOff, Mic, MicOff, PhoneOff, Copy, Check, Users, Shield, Loader2 } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, PhoneOff, Copy, Check, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/lib/AuthContext";
-import axiosInstance from "@/lib/axiosinstance";
 
 export default function MeetingRoom() {
   const router = useRouter();
-  const { roomId, host } = router.query;
+  const { roomId } = router.query;
   const { user } = useUser();
   const videoRef = useRef<HTMLVideoElement>(null);
   
@@ -17,23 +16,18 @@ export default function MeetingRoom() {
   const [isAudioOn, setIsAudioOn] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [meeting, setMeeting] = useState<any>(null);
-  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [joined, setJoined] = useState(false);
 
-  // ✅ Meeting Details Fetch
+  // ✅ Safe User Data (Even if user is null)
+  const userName = user?.name || user?.email?.split("@")[0] || "Guest";
+  const userInitial = userName.charAt(0).toUpperCase();
+
   useEffect(() => {
-    if (!roomId) return;
-    const fetchMeeting = async () => {
-      try {
-        const res = await axiosInstance.get(`/meeting/${roomId}`);
-        setMeeting(res.data);
-      } catch (error) { console.log(error); } 
-      finally { setLoading(false); }
-    };
-    fetchMeeting();
-  }, [roomId]);
+    // Simulate loading
+    const timer = setTimeout(() => setLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  // ✅ Camera Start Logic
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -41,11 +35,10 @@ export default function MeetingRoom() {
       if (videoRef.current) videoRef.current.srcObject = mediaStream;
       setIsVideoOn(true);
       setIsAudioOn(true);
-      setPermissionGranted(true);
+      setJoined(true);
       toast.success("Camera and Mic connected!");
     } catch (error) {
-      toast.error("Camera/Mic access denied. Please allow permissions.");
-      setPermissionGranted(false);
+      toast.error("Camera/Mic access denied.");
     }
   };
 
@@ -83,18 +76,18 @@ export default function MeetingRoom() {
     </div>
   );
 
-  if (!roomId) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
+  if (!roomId) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Invalid Room</div>;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       
-      {/* ✅ Top Bar */}
+      {/* Top Bar */}
       <div className="bg-gray-800 px-4 py-3 flex justify-between items-center shadow-md border-b border-gray-700">
         <div className="flex items-center gap-3">
           <div className="bg-red-600 p-2 rounded-lg"><Video className="w-5 h-5 text-white" /></div>
           <div>
-            <h1 className="text-base font-bold">{meeting?.title || "Meeting Room"}</h1>
-            <p className="text-xs text-gray-400">Room: {roomId}</p>
+            <h1 className="text-base font-bold">Meeting Room</h1>
+            <p className="text-xs text-gray-400">Room ID: {roomId}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -108,16 +101,16 @@ export default function MeetingRoom() {
         </div>
       </div>
 
-      {/* ✅ Main Video Area */}
+      {/* Main Area */}
       <div className="flex-1 p-4 flex items-center justify-center">
         <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-700 relative flex items-center justify-center">
           
-          {!permissionGranted ? (
-            <div className="text-center p-8">
-              <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+          {!joined ? (
+            <div className="text-center p-8 bg-gray-800 rounded-2xl max-w-md mx-auto">
+              <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Video className="w-10 h-10 text-gray-400" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Ready to join?</h3>
+              <h3 className="text-xl font-bold mb-2 text-white">Ready to join?</h3>
               <p className="text-gray-400 mb-6 text-sm">Click the button below to enable camera and mic.</p>
               <Button onClick={startCamera} className="bg-red-600 hover:bg-red-700 text-white px-8 py-6 text-lg rounded-full shadow-lg">
                 Join Now
@@ -131,20 +124,20 @@ export default function MeetingRoom() {
                 muted 
                 playsInline 
                 className="w-full h-full object-cover"
-                style={{ transform: "scaleX(-1)" }} // Mirror effect
+                style={{ transform: "scaleX(-1)" }}
               />
               
               {!isVideoOn && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
                   <div className="w-32 h-32 bg-red-600 rounded-full flex items-center justify-center text-5xl font-bold shadow-xl border-4 border-gray-700">
-                    {user?.name?.[0]?.toUpperCase() || "U"}
+                    {userInitial}
                   </div>
                 </div>
               )}
 
               <div className="absolute bottom-4 left-4 bg-black/70 px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 backdrop-blur-sm border border-white/10">
                 <Shield className="w-4 h-4 text-red-500" />
-                {user?.name || "You"}
+                {userName}
                 {!isAudioOn && <MicOff className="w-4 h-4 text-red-500" />}
               </div>
             </>
@@ -152,31 +145,20 @@ export default function MeetingRoom() {
         </div>
       </div>
 
-      {/* ✅ Controls */}
-      <div className="bg-gray-800 p-4 md:p-6 flex justify-center gap-4 shadow-inner border-t border-gray-700">
-        <button 
-          onClick={toggleAudio} 
-          disabled={!permissionGranted}
-          className={`p-4 rounded-full transition-all active:scale-95 shadow-lg disabled:opacity-50 ${isAudioOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-600 hover:bg-red-700"}`}
-        >
-          {isAudioOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
-        </button>
-        
-        <button 
-          onClick={toggleVideo} 
-          disabled={!permissionGranted}
-          className={`p-4 rounded-full transition-all active:scale-95 shadow-lg disabled:opacity-50 ${isVideoOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-600 hover:bg-red-700"}`}
-        >
-          {isVideoOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
-        </button>
-        
-        <button 
-          onClick={leaveMeeting} 
-          className="p-4 rounded-full bg-red-600 hover:bg-red-700 px-8 flex items-center gap-2 font-bold transition-all active:scale-95 shadow-lg shadow-red-600/30"
-        >
-          <PhoneOff className="w-6 h-6" /> Leave
-        </button>
-      </div>
+      {/* Controls Bar */}
+      {joined && (
+        <div className="bg-gray-800 p-4 md:p-6 flex justify-center gap-4 shadow-inner border-t border-gray-700">
+          <button onClick={toggleAudio} className={`p-4 rounded-full transition-all active:scale-95 shadow-lg ${isAudioOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-600 hover:bg-red-700"}`}>
+            {isAudioOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
+          </button>
+          <button onClick={toggleVideo} className={`p-4 rounded-full transition-all active:scale-95 shadow-lg ${isVideoOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-600 hover:bg-red-700"}`}>
+            {isVideoOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
+          </button>
+          <button onClick={leaveMeeting} className="p-4 rounded-full bg-red-600 hover:bg-red-700 px-8 flex items-center gap-2 font-bold transition-all active:scale-95 shadow-lg shadow-red-600/30">
+            <PhoneOff className="w-6 h-6" /> Leave
+          </button>
+        </div>
+      )}
     </div>
   );
 }
