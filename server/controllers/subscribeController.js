@@ -12,12 +12,10 @@ export const handleSubscribe = async (req, res) => {
   try {
     let finalChannelId = channelId;
 
-    // ✅ FIX: Agar channelId "admin" hai, toh real Admin ID nikaalo
-    if (channelId === "admin") {
+    // Agar "admin" hai, toh real admin ID uthao
+    if (channelId === "admin" || channelId === "yourTube Official") {
       const adminUser = await users.findOne({ email: "admin@yourtube.com" });
-      if (adminUser) {
-        finalChannelId = adminUser._id.toString();
-      }
+      if (adminUser) finalChannelId = adminUser._id.toString();
     }
 
     const existingSub = await Subscribe.findOne({ subscriber: subscriberId, channel: finalChannelId });
@@ -32,32 +30,56 @@ export const handleSubscribe = async (req, res) => {
   } catch (error) { return res.status(500).json({ message: error.message }); }
 };
 
-// ✅ Get Subscribed Channels
+// ✅ Get Subscribed Channels (Bulletproof)
 export const getSubscribedChannels = async (req, res) => {
   const { userId } = req.params;
 
   try {
+    // 1. User ki saari subscriptions nikalo
     const subscriptions = await Subscribe.find({ subscriber: userId });
     if (subscriptions.length === 0) return res.status(200).json([]);
 
-    const channelValues = subscriptions.map((sub) => sub.channel);
-    const validIds = channelValues.filter((id) => mongoose.Types.ObjectId.isValid(id));
-    const nameValues = channelValues.filter((id) => !mongoose.Types.ObjectId.isValid(id));
+    let foundChannels = [];
 
-    let channels = [];
+    // 2. Har ek subscription pe loop chalao (taaki ek galat ID se sab na ruke)
+    for (const sub of subscriptions) {
+      let channelId = sub.channel;
 
-    if (validIds.length > 0) {
-      const idChannels = await users.find({ _id: { $in: validIds } }).select("_id name channelname email image description");
-      channels = [...channels, ...idChannels];
+      // Agar purana "admin" string hai, toh use real ID banao
+      if (channelId === "admin" || channelId === "yourTube Official") {
+        const adminUser = await users.findOne({ email: "admin@yourtube.com" });
+        if (adminUser) channelId = adminUser._id.toString();
+      }
+
+      // Agar ID valid hai, toh user fetch karo
+      if (mongoose.Types.ObjectId.isValid(channelId)) {
+        const foundUser = await users.findById(channelId).select("_id name channelname email image description");
+        if (foundUser) {
+          foundChannels.push({
+            ...foundUser.toObject(),
+            channelname: foundUser.channelname || foundUser.name || "YourTube Official"
+          });
+        }
+      } 
+      // Agar ID nahi hai (String hai), toh naam se dhundho
+      else {
+        const foundByName = await users.findOne({ 
+          $or: [{ name: channelId }, { channelname: channelId }] 
+        }).select("_id name channelname email image description");
+        
+        if (foundByName) {
+          foundChannels.push({
+            ...foundByName.toObject(),
+            channelname: foundByName.channelname || foundByName.name || "YourTube Official"
+          });
+        }
+      }
     }
 
-    if (nameValues.length > 0) {
-      const nameChannels = await users.find({ $or: [{ name: { $in: nameValues } }, { channelname: { $in: nameValues } }] }).select("_id name channelname email image description");
-      channels = [...channels, ...nameChannels];
-    }
+    // 3. Duplicate channels hatao
+    const uniqueChannels = foundChannels.filter((v, i, a) => a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
-    const safeChannels = channels.map((c) => ({ ...c.toObject(), channelname: c.channelname || c.name || "User" }));
-    return res.status(200).json(safeChannels);
+    return res.status(200).json(uniqueChannels);
   } catch (error) { return res.status(500).json({ message: error.message }); }
 };
 
@@ -65,7 +87,7 @@ export const checkSubscription = async (req, res) => {
   const { channelId, userId } = req.params;
   try {
     let finalChannelId = channelId;
-    if (channelId === "admin") {
+    if (channelId === "admin" || channelId === "yourTube Official") {
       const adminUser = await users.findOne({ email: "admin@yourtube.com" });
       if (adminUser) finalChannelId = adminUser._id.toString();
     }
