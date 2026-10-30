@@ -2,6 +2,7 @@
 import users from "../Modals/Auth.js";
 import mongoose from "mongoose";
 
+// ✅ Subscribe / Unsubscribe
 export const handleSubscribe = async (req, res) => {
   const { channelId } = req.params;
   const { subscriberId } = req.body;
@@ -11,12 +12,14 @@ export const handleSubscribe = async (req, res) => {
   }
 
   try {
+    // Check karo pehle se subscribed hai ya nahi
     const existingSub = await Subscribe.findOne({ subscriber: subscriberId, channel: channelId });
 
     if (existingSub) {
       await Subscribe.findByIdAndDelete(existingSub._id);
       return res.status(200).json({ subscribed: false, message: "Unsubscribed" });
     } else {
+      // Naya subscribe karo
       await Subscribe.create({ subscriber: subscriberId, channel: channelId });
       return res.status(200).json({ subscribed: true, message: "Subscribed" });
     }
@@ -25,35 +28,30 @@ export const handleSubscribe = async (req, res) => {
   }
 };
 
+// ✅ Get Subscribed Channels (THE FIX)
 export const getSubscribedChannels = async (req, res) => {
   const { userId } = req.params;
 
   try {
+    // 1. User ki saari subscriptions nikalo
     const subscriptions = await Subscribe.find({ subscriber: userId });
     if (subscriptions.length === 0) return res.status(200).json([]);
 
-    const channelValues = subscriptions.map((sub) => sub.channel);
+    // 2. Channel IDs nikalo
+    const channelIds = subscriptions.map((sub) => sub.channel);
 
-    // ✅ Valid ObjectIds filter karo
-    const validObjectIds = channelValues.filter((id) => mongoose.Types.ObjectId.isValid(id));
-    
-    let channels = [];
+    // 3. Sirf valid ObjectIds filter karo
+    const validIds = channelIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) return res.status(200).json([]);
 
-    // Agar valid ObjectIds hain toh users fetch karo
-    if (validObjectIds.length > 0) {
-      const idChannels = await users.find({ _id: { $in: validObjectIds } }).select("_id name channelname email image description");
-      channels = [...channels, ...idChannels];
-    }
+    // 4. Users fetch karo
+    const channels = await users.find({ _id: { $in: validIds } }).select("_id name channelname email image description");
 
-    // ✅ Agar purane subscriptions "admin" naam se hain, toh unhe name se match karo
-    const stringValues = channelValues.filter((id) => !mongoose.Types.ObjectId.isValid(id));
-    if (stringValues.length > 0) {
-      const nameChannels = await users.find({ $or: [{ name: { $in: stringValues } }, { channelname: { $in: stringValues } }] }).select("_id name channelname email image description");
-      channels = [...channels, ...nameChannels];
-    }
-
-    // ✅ Agar channelname nahi hai, toh name daal do fallback
-    const safeChannels = channels.map((c) => ({ ...c.toObject(), channelname: c.channelname || c.name || c.email || "User" }));
+    // 5. Safe data return karo (agar channelname nahi hai toh name daal do)
+    const safeChannels = channels.map((c) => ({
+      ...c.toObject(),
+      channelname: c.channelname || c.name || c.email?.split("@")[0] || "User",
+    }));
 
     return res.status(200).json(safeChannels);
   } catch (error) {
