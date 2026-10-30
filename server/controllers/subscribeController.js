@@ -2,68 +2,70 @@
 import users from "../Modals/Auth.js";
 import mongoose from "mongoose";
 
-// ✅ Subscribe / Unsubscribe
 export const handleSubscribe = async (req, res) => {
   const { channelId } = req.params;
   const { subscriberId } = req.body;
-
   if (!channelId || !subscriberId) return res.status(400).json({ message: "Missing IDs" });
 
   try {
     let finalChannelId = channelId;
-
-    // 🔥 THE FIX: Agar "admin" aaya, toh admin@yourtube.com ki real ID nikalo
     if (channelId.toLowerCase() === "admin") {
       const adminUser = await users.findOne({ email: "admin@yourtube.com" });
-      if (adminUser) {
-        finalChannelId = adminUser._id.toString();
-      }
+      if (adminUser) finalChannelId = adminUser._id.toString();
     }
 
     const existingSub = await Subscribe.findOne({ subscriber: subscriberId, channel: finalChannelId });
-
     if (existingSub) {
       await Subscribe.findByIdAndDelete(existingSub._id);
-      return res.status(200).json({ subscribed: false, message: "Unsubscribed" });
+      return res.status(200).json({ subscribed: false });
     } else {
       await Subscribe.create({ subscriber: subscriberId, channel: finalChannelId });
-      return res.status(200).json({ subscribed: true, message: "Subscribed" });
+      return res.status(200).json({ subscribed: true });
     }
   } catch (error) { return res.status(500).json({ message: error.message }); }
 };
 
-// ✅ Get Subscribed Channels (Bulletproof)
 export const getSubscribedChannels = async (req, res) => {
   const { userId } = req.params;
 
   try {
+    let channels = [];
+    const adminUser = await users.findOne({ email: "admin@yourtube.com" });
+    
+    // ✅ FIX: Admin hamesha list me top pe rahega
+    if (adminUser) {
+      channels.push({
+        _id: adminUser._id,
+        name: adminUser.name || "YourTube Official",
+        channelname: adminUser.channelname || adminUser.name || "YourTube Official",
+        image: adminUser.image || "",
+        email: adminUser.email,
+        description: adminUser.description || "Official YourTube Channel"
+      });
+    }
+
     const subscriptions = await Subscribe.find({ subscriber: userId });
-    if (subscriptions.length === 0) return res.status(200).json([]);
-
-    let uniqueChannels = new Map(); // Map use karenge taaki duplicates na aayein
-
+    
     for (const sub of subscriptions) {
       let channelId = sub.channel;
-
-      // Agar purana "admin" hai, toh use real ID banao
       if (channelId.toLowerCase() === "admin") {
-        const adminUser = await users.findOne({ email: "admin@yourtube.com" });
         if (adminUser) channelId = adminUser._id.toString();
       }
 
-      // Agar ID valid hai, toh user dhundo
       if (mongoose.Types.ObjectId.isValid(channelId)) {
         const foundUser = await users.findById(channelId).select("_id name channelname email image description");
-        if (foundUser) {
-          uniqueChannels.set(foundUser._id.toString(), {
+        if (foundUser && foundUser._id.toString() !== adminUser?._id.toString()) {
+          channels.push({
             ...foundUser.toObject(),
-            channelname: foundUser.channelname || foundUser.name || "YourTube Official"
+            channelname: foundUser.channelname || foundUser.name || "User"
           });
         }
       }
     }
 
-    return res.status(200).json(Array.from(uniqueChannels.values()));
+    // Duplicates hatao
+    const uniqueChannels = channels.filter((v, i, a) => a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+    return res.status(200).json(uniqueChannels);
   } catch (error) { return res.status(500).json({ message: error.message }); }
 };
 
